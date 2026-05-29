@@ -452,14 +452,19 @@ class FaceEngineModule(private val reactContext: ReactApplicationContext) :
         return out
     }
 
-    /** §3.5 — softmax over the 3-class FASNet logits; return P(real) at index 0. */
+    /**
+     * §3.5 — softmax over the 3-class FASNet logits; return P(real).
+     * Per Silent-Face's own inference (test.py): class index 1 is the live/real
+     * face; indices 0 and 2 are spoof types. Real-score = softmax[1].
+     */
     private fun parseFasnetOutput(output: FloatArray): Float {
         val maxVal = output.max()
         var sumExp = 0.0
         val expVals = DoubleArray(output.size) {
             val e = exp((output[it] - maxVal).toDouble()); sumExp += e; e
         }
-        return (expVals[0] / sumExp).toFloat()
+        val realIdx = if (output.size > 1) 1 else 0
+        return (expVals[realIdx] / sumExp).toFloat()
     }
 
     // =======================================================================================

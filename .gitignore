@@ -72,3 +72,13 @@ yarn-error.log
 !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
+
+# OfflineID — Python model-export workspace (heavy, regenerable)
+.venv/
+models/buffalo_sc/
+models/buffalo_sc.zip
+models/*_fp32.onnx
+models/*_raw.onnx
+scripts/Silent-Face-Anti-Spoofing/
+# Keep the 4 final ONNX bundled in android assets so the prototype runs after clone.
+!android/app/src/main/assets/*.onnx

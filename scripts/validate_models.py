@@ -61,9 +61,9 @@ def main() -> None:
         )
         results.append((name, size_mb, avg_ms, p95_ms))
 
-    # Write BENCHMARKS.md
-    with open("../BENCHMARKS.md", "w") as f:
-        f.write("# BENCHMARKS.md — Model Performance\n\n")
+    # Write BENCHMARKS.md (utf-8, ASCII dash to avoid mojibake on Windows)
+    with open("../BENCHMARKS.md", "w", encoding="utf-8") as f:
+        f.write("# BENCHMARKS.md - Model Performance\n\n")
         f.write("| Model | Size (MB) | Avg Latency (ms) | P95 Latency (ms) |\n")
         f.write("|---|---|---|---|\n")
         for name, size, avg, p95 in results:

@@ -1,50 +1,62 @@
 #!/usr/bin/env python3
-"""Export the FASNet (MiniFASNetV2) liveness models from PyTorch to ONNX.
+"""Export the FASNet liveness models from PyTorch to ONNX.
 
-Two MiniFASNetV2 checkpoints from ``minivision-ai/Silent-Face-Anti-Spoofing``
-are exported. Both share an identical architecture; only the crop scale of the
-training data differs (2.7x vs 4.0x of the face bounding box). The native module
-loads both and averages their softmax "real" scores.
+Two checkpoints from ``minivision-ai/Silent-Face-Anti-Spoofing`` are exported.
+Contrary to a common misreading, the two scales use **different architectures**:
 
-Run (from the ``scripts/`` directory, with the Silent-Face repo cloned alongside)::
+* scale 2.7 -> ``2.7_80x80_MiniFASNetV2.pth``      (MiniFASNetV2)
+* scale 4.0 -> ``4_0_0_80x80_MiniFASNetV1SE.pth``  (MiniFASNetV1SE)
 
-    git clone https://github.com/minivision-ai/Silent-Face-Anti-Spoofing
+Both take an 80x80 BGR crop and emit 3 logits. Per Silent-Face's own inference
+code (``test.py``), the predictions of both models are summed and ``argmax`` is
+taken; **class index 1 is the live/real face** (indices 0 and 2 are spoof types).
+The native module therefore reads softmax index 1 as the real-face probability.
+
+Run from the ``scripts/`` directory after fetching the weights::
+
+    # weights live under Silent-Face-Anti-Spoofing/{src/model_lib, resources/anti_spoof_models}
     python export_fasnet.py
 
-Model contract
---------------
-* Input :  ``(1, 3, 80, 80)``  BGR crop, normalised with ImageNet BGR stats
-* Output:  ``(1, 3)``          logits -> softmax -> P(real) = class 0
-
-Inputs / outputs
-----------------
-* Inputs :  ``Silent-Face-Anti-Spoofing/resources/anti_spoof_models/*.pth``
-* Outputs:  ``../models/fasnet_2_7.onnx``, ``../models/fasnet_4_0.onnx``
+Outputs:  ``../models/fasnet_2_7.onnx``, ``../models/fasnet_4_0.onnx``
 """
 import os
 import sys
 
 import torch
 
-sys.path.insert(0, "./Silent-Face-Anti-Spoofing/src/model_lib")
-from MiniFASNet import MiniFASNetV2  # noqa: E402
+_LIB = os.path.join("Silent-Face-Anti-Spoofing", "src", "model_lib")
+sys.path.insert(0, _LIB)
+from MiniFASNet import MiniFASNetV2, MiniFASNetV1SE  # noqa: E402
 
 
-def export_fasnet(pth_path: str, onnx_path: str, label: str) -> None:
-    """Load a MiniFASNetV2 ``.pth`` checkpoint and export it to ONNX.
+def export_fasnet(model: torch.nn.Module, pth_path: str, onnx_path: str, label: str) -> None:
+    """Load a checkpoint into ``model`` and export it to ONNX.
 
     Args:
+        model:     An instantiated (un-loaded) MiniFASNet variant.
         pth_path:  Path to the PyTorch state-dict checkpoint.
         onnx_path: Destination ONNX file path.
         label:     Human-readable scale label for log output.
     """
-    model = MiniFASNetV2(conv6_kernel=(5, 5))
-    # weights_only=True: checkpoints are plain tensor state-dicts; this blocks
-    # arbitrary code execution during unpickling.
+    # weights_only=True blocks arbitrary code execution during unpickling.
     state = torch.load(pth_path, map_location="cpu", weights_only=True)
-    # Strip the 'module.' prefix if saved with DataParallel
+    # Strip the 'module.' prefix if the checkpoint was saved with DataParallel.
     state = {k.replace("module.", ""): v for k, v in state.items()}
-    model.load_state_dict(state)
+    # Older SE checkpoints use flat se_fc1/se_bn1 names; the model nests them
+    # under se_module.* . Remap so load_state_dict matches.
+    remapped = {}
+    for k, v in state.items():
+        for old, new in (
+            ("se_fc1", "se_module.fc1"),
+            ("se_fc2", "se_module.fc2"),
+            ("se_bn1", "se_module.bn1"),
+            ("se_bn2", "se_module.bn2"),
+        ):
+            if old in k:
+                k = k.replace(old, new)
+                break
+        remapped[k] = v
+    model.load_state_dict(remapped)
     model.eval()
 
     dummy = torch.randn(1, 3, 80, 80)
@@ -62,20 +74,24 @@ def export_fasnet(pth_path: str, onnx_path: str, label: str) -> None:
 
 
 def main() -> None:
-    """Export both FASNet scales to separate ONNX files."""
-    models_root = "./Silent-Face-Anti-Spoofing/resources/anti_spoof_models"
+    """Export both FASNet scales (V2 @ 2.7, V1SE @ 4.0) to separate ONNX files."""
+    root = os.path.join("Silent-Face-Anti-Spoofing", "resources", "anti_spoof_models")
+    os.makedirs("../models", exist_ok=True)
+
     export_fasnet(
-        os.path.join(models_root, "2.7_80x80_MiniFASNetV2.pth"),
+        MiniFASNetV2(conv6_kernel=(5, 5)),
+        os.path.join(root, "2.7_80x80_MiniFASNetV2.pth"),
         "../models/fasnet_2_7.onnx",
-        "scale=2.7",
+        "scale=2.7 (MiniFASNetV2)",
     )
     export_fasnet(
-        os.path.join(models_root, "4_0_80x80_MiniFASNetV2.pth"),
+        MiniFASNetV1SE(conv6_kernel=(5, 5)),
+        os.path.join(root, "4_0_0_80x80_MiniFASNetV1SE.pth"),
         "../models/fasnet_4_0.onnx",
-        "scale=4.0",
+        "scale=4.0 (MiniFASNetV1SE)",
     )
-    # Shipped as two separate files (fasnet_2_7.onnx, fasnet_4_0.onnx).
-    # The native module loads both at startup and averages their real scores.
+    # Shipped as two ONNX files; the native module loads both at startup and
+    # averages their P(real) = softmax[1].
 
 
 if __name__ == "__main__":

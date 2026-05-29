@@ -344,13 +344,16 @@ class FaceEngineModule: NSObject {
         return self.softmaxRealScore(logits)
     }
 
-    /// Softmax over the 3-class FASNet output, returning P(class 0 = real).
+    /// Softmax over the 3-class FASNet output, returning P(real).
+    /// Per Silent-Face inference, class index 1 is the live/real face
+    /// (indices 0 and 2 are spoof types).
     private func softmaxRealScore(_ logits: [Float]) -> Float {
         guard let maxVal = logits.max() else { return 0 }
         let exps = logits.map { expf($0 - maxVal) }
         let sumExp = exps.reduce(0, +)
         guard sumExp > 0 else { return 0 }
-        return exps[0] / sumExp
+        let realIdx = logits.count > 1 ? 1 : 0
+        return exps[realIdx] / sumExp
     }
 
     // MARK: - ArcFace alignment (§3.2, no OpenCV)
