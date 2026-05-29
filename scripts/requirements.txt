@@ -1,0 +1,9 @@
+onnx==1.16.0
+onnxruntime==1.18.0
+onnxruntime-tools==1.7.0
+onnx-simplifier==0.4.35
+insightface==0.7.3
+torch==2.3.0
+opencv-python==4.10.0
+numpy==1.26.0
+scikit-image==0.23.0
