@@ -114,10 +114,11 @@ export async function passiveLivenessCheck(
     bbox.h,
   ];
 
-  // Two-scale check (Silent-Face-Anti-Spoofing). Native applies 2.7× / 4.0×.
+  // Two-scale check (Silent-Face-Anti-Spoofing): scale 2.7 (MiniFASNetV2) and
+  // 4.0 (MiniFASNetV1SE). The scale selects the matching FASNet model natively.
   const [r1, r2] = await Promise.all([
-    FaceEngine.checkLiveness(base64Frame, tuple),
-    FaceEngine.checkLiveness(base64Frame, tuple),
+    FaceEngine.checkLiveness(base64Frame, tuple, 2.7),
+    FaceEngine.checkLiveness(base64Frame, tuple, 4.0),
   ]);
 
   const score = (r1.score + r2.score) / 2;

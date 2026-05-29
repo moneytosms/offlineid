@@ -63,6 +63,8 @@ export interface IFaceEngineNative {
   checkLiveness(
     base64Frame: string,
     bbox: [number, number, number, number],
+    /** Crop scale (2.7 or 4.0) — selects the matching FASNet model natively. */
+    scale: number,
   ): Promise<LivenessResult>;
   getEmbedding(
     base64Frame: string,
@@ -108,8 +110,9 @@ export const FaceEngine: IFaceEngineNative = {
   checkLiveness(
     base64Frame: string,
     bbox: [number, number, number, number],
+    scale: number,
   ): Promise<LivenessResult> {
-    return requireNative().checkLiveness(base64Frame, bbox);
+    return requireNative().checkLiveness(base64Frame, bbox, scale);
   },
 
   getEmbedding(

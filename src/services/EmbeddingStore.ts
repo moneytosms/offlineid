@@ -34,12 +34,19 @@ function bytesToHex(bytes: Uint8Array): string {
   return out;
 }
 
-/** Decode a lowercase hex string back to bytes. */
+/** Decode a lowercase hex string back to bytes. Throws on malformed hex. */
 function hexToBytes(hex: string): Uint8Array {
+  if (hex.length % 2 !== 0) {
+    throw new Error('hexToBytes: odd-length hex string (corrupt BLOB)');
+  }
   const len = hex.length >> 1;
   const bytes = new Uint8Array(len);
   for (let i = 0; i < len; i++) {
-    bytes[i] = parseInt(hex.substr(i * 2, 2), 16);
+    const byte = parseInt(hex.slice(i * 2, i * 2 + 2), 16);
+    if (Number.isNaN(byte)) {
+      throw new Error('hexToBytes: invalid hex digit (corrupt BLOB)');
+    }
+    bytes[i] = byte;
   }
   return bytes;
 }

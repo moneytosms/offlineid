@@ -51,6 +51,10 @@ class FaceEngineModule(private val reactContext: ReactApplicationContext) :
     private var liveness27Session: OrtSession? = null   // fasnet_2_7.onnx
     private var liveness40Session: OrtSession? = null   // fasnet_4_0.onnx
 
+    // Hardware-accel toggle. CPU is the safe default; NNAPI can abort natively on
+    // some devices/emulators with INT8 graphs (SPEC §18). Flip on for real-device tuning.
+    private val useNnapi = false
+
     // ---- Dedicated inference thread -------------------------------------------------------
     private val inferenceThread = HandlerThread("OrtInference").apply { start() }
     private val inferenceHandler = Handler(inferenceThread.looper)
@@ -125,29 +129,39 @@ class FaceEngineModule(private val reactContext: ReactApplicationContext) :
         env = null
     }
 
+    /** RN module teardown: free ONNX resources and stop the inference thread. */
+    override fun invalidate() {
+        super.invalidate()
+        runCatching { releaseInternal() }
+        inferenceThread.quitSafely()
+    }
+
     /**
      * Build session options with the NNAPI → XNNPACK → CPU provider fallback and load
      * a model from the APK `assets/` directory.
      */
     private fun loadModel(ortEnv: OrtEnvironment, assetName: String): OrtSession {
-        val opts = OrtSession.SessionOptions().apply {
+        val bytes = reactContext.assets.open(assetName).use { it.readBytes() }
+
+        // Plain CPU options — reliable on every device + emulator. ONNX Runtime's
+        // default CPU kernels comfortably meet the latency budget for these models.
+        fun cpuOptions() = OrtSession.SessionOptions().apply {
             setIntraOpNumThreads(2)
             setInterOpNumThreads(1)
-            // NNAPI first — may be unavailable / crash on INT8; swallow and fall through.
+        }
+
+        // Hardware acceleration (NNAPI) is opt-in: it can throw at createSession
+        // time (and on some emulators aborts natively) with INT8 graphs. We try it
+        // only when explicitly enabled, and fall back to CPU on any Java-level error.
+        if (useNnapi) {
             try {
-                addNnapi()
+                val accel = cpuOptions().apply { addNnapi() }
+                return ortEnv.createSession(bytes, accel)
             } catch (e: Throwable) {
-                // NNAPI unavailable — continue with CPU accelerators.
-            }
-            // XNNPACK always added as the CPU accelerator; CPU is the implicit last resort.
-            try {
-                addXnnpack(mapOf<String, String>())
-            } catch (e: Throwable) {
-                // XNNPACK unavailable — plain CPU kernels still serve as fallback.
+                // NNAPI failed for this model — fall through to CPU.
             }
         }
-        val bytes = reactContext.assets.open(assetName).use { it.readBytes() }
-        return ortEnv.createSession(bytes, opts)
+        return ortEnv.createSession(bytes, cpuOptions())
     }
 
     // =======================================================================================
