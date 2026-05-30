@@ -6,7 +6,8 @@ import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.uimanager.ViewManager
 
 /**
- * ReactPackage that registers [FaceEngineModule] with the React Native bridge.
+ * ReactPackage that registers [FaceEngineModule] and [ScreenBrightnessModule]
+ * with the React Native bridge.
  *
  * Add to the host app's `MainApplication.kt`:
  * ```kotlin
@@ -18,7 +19,10 @@ class FaceEnginePackage : ReactPackage {
 
     override fun createNativeModules(
         reactContext: ReactApplicationContext
-    ): List<NativeModule> = listOf(FaceEngineModule(reactContext))
+    ): List<NativeModule> = listOf(
+        FaceEngineModule(reactContext),
+        ScreenBrightnessModule(reactContext),
+    )
 
     override fun createViewManagers(
         reactContext: ReactApplicationContext
