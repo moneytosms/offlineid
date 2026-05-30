@@ -1,7 +1,7 @@
 # SPEC.md — OfflineID: Offline Facial Recognition & Liveness Detection
 ## Hackathon 7.0 — Datalake 3.0 Integration Module
 
-> **Optimised for Claude Code.** Every section is written so an AI coding agent can act
+> Every section is precise and self-contained, so an engineer can act
 > on it directly — no ambiguity, no implied knowledge. Read `ARCHITECTURE.md` and
 > `MODEL_PIPELINE.md` alongside this file before touching any code.
 
@@ -727,7 +727,7 @@ function preprocessFrame(frame: Uint8Array, targetSize: number): Float32Array {
 
 ---
 
-## 17. Build & Run Instructions (for Claude Code)
+## 17. Build & Run Instructions
 
 ### 17.1 Prerequisites
 
@@ -782,7 +782,7 @@ npm run test:e2e               # Detox E2E (requires device/emulator)
 
 ---
 
-## 18. Open Questions / Known Risks for Claude Code
+## 18. Open Questions / Known Risks
 
 | Risk | Mitigation |
 |---|---|
@@ -795,7 +795,7 @@ npm run test:e2e               # Detox E2E (requires device/emulator)
 
 ---
 
-## 19. File Ownership Map (for Claude Code task assignment)
+## 19. File Ownership Map
 
 | File | Language | Priority | Depends on |
 |---|---|---|---|

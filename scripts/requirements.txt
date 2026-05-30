@@ -7,3 +7,4 @@ torch==2.3.0
 opencv-python==4.10.0
 numpy==1.26.0
 scikit-image==0.23.0
+python-pptx==1.0.2

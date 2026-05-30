@@ -17,7 +17,7 @@ OfflineID module
 ├── Native (Android, Kotlin)         ← ONNX inference engine, exposed as NativeModules.FaceEngine
 │   ├── FaceEngineModule.kt          (detectFace / checkLiveness / getEmbedding / initModels)
 │   └── FaceEnginePackage.kt         (ReactPackage registration)
-├── Native (iOS, Swift)              ← PORT REQUIRED — see §6
+├── Native (iOS, Swift)              ← PORT REQUIRED, see §6
 ├── Model assets (≈9.1 MB)           ← 4 ONNX files in android/app/src/main/assets
 ├── JS services (src/services)       ← FaceEngine bridge, LivenessService, Stores, SyncService
 ├── JS hook (src/hooks/useFaceAuth)  ← orchestration state machine
@@ -48,7 +48,7 @@ Everything above the native bridge is plain RN/TS and is already cross-platform.
 
    Fix the `package` line at the top of both files to Datalake's applicationId.
 
-2. **Register the package** in Datalake's `MainApplication.kt` — add one line inside
+2. **Register the package** in Datalake's `MainApplication.kt`, add one line inside
    `getPackages()`:
    ```kotlin
    override fun getPackages(): List<ReactPackage> =
@@ -101,13 +101,13 @@ yarn install
 cd android && ./gradlew clean      # regenerate autolinking PackageList.java
 ```
 
-**Babel** — ensure the worklets plugin is present (`babel.config.js`):
+**Babel**, ensure the worklets plugin is present (`babel.config.js`):
 ```js
 plugins: ['react-native-worklets-core/plugin']
 ```
 After adding it, start Metro once with `--reset-cache`.
 
-**Entry polyfill** — `react-native-get-random-values` must be imported **first** in
+**Entry polyfill**, `react-native-get-random-values` must be imported **first** in
 `index.js` (before any crypto use):
 ```js
 import 'react-native-get-random-values';
@@ -150,7 +150,7 @@ useEffect(() => {
 }, []);
 ```
 
-**Authenticate a field worker** — drop `AuthScreen` behind a Datalake route/button:
+**Authenticate a field worker**, drop `AuthScreen` behind a Datalake route/button:
 ```tsx
 <AuthScreen
   deviceId={datalakeDeviceId}            // your existing device identifier
@@ -165,7 +165,7 @@ useEffect(() => {
 drop `SyncBadge` into any Datalake header to show the queued count.
 
 If Datalake owns identity, replace `EmbeddingStore`'s `employeeId/name/department` with
-your user model — the store is the only coupling point.
+your user model, the store is the only coupling point.
 
 ---
 
@@ -187,19 +187,19 @@ No other Datalake backend change is required for the offline auth path.
 
 ---
 
-## 6. iOS native engine (Swift) — provided
+## 6. iOS native engine (Swift) - provided
 
 The Swift port of the engine is **already written** in `ios/FaceEngine/`:
-- `FaceEngine.swift` — `initModels / releaseModels / detectFace / checkLiveness /
+- `FaceEngine.swift`, `initModels / releaseModels / detectFace / checkLiveness /
   getEmbedding`, SCRFD FPN decode + NMS, ArcFace 5-point align (manual least-squares),
-  FASNet softmax — a 1:1 port of `FaceEngineModule.kt`.
-- `RGBAImage.swift` — CoreGraphics pixel helper (top-left-origin RGBA), replaces Android
+  FASNet softmax, a 1:1 port of `FaceEngineModule.kt`.
+- `RGBAImage.swift`, CoreGraphics pixel helper (top-left-origin RGBA), replaces Android
   `Bitmap`; identical resize/crop/normalise behaviour.
-- `FaceEngine.m` — `RCT_EXTERN_MODULE` bridge; method signatures match `IFaceEngineNative`
+- `FaceEngine.m`, `RCT_EXTERN_MODULE` bridge; method signatures match `IFaceEngineNative`
   in `src/services/FaceEngine.ts` exactly, so **no JS changes** are needed.
-- `OfflineID-Bridging-Header.h` — exposes React's ObjC headers to Swift.
+- `OfflineID-Bridging-Header.h`, exposes React's ObjC headers to Swift.
 
-What remains is **Xcode build wiring** (one-time, needs a Mac) — see
+What remains is **Xcode build wiring** (one-time, needs a Mac), see
 `ios/FaceEngine/README.md`:
 1. `pod 'onnxruntime-objc', '~> 1.18.0'` in `ios/Podfile` → `pod install`.
 2. Add the 3 source files to the `OfflineID` (or Datalake) target.
@@ -208,7 +208,7 @@ What remains is **Xcode build wiring** (one-time, needs a Mac) — see
 5. Add `NSCameraUsageDescription` to `Info.plist`.
 
 Because the contract is identical, once the module is linked `isFaceEngineAvailable()` flips
-true on iOS and every screen works as-is. CoreML execution provider is optional — the CPU
+true on iOS and every screen works as-is. CoreML execution provider is optional, the CPU
 provider already meets the < 1 s target.
 
 ---

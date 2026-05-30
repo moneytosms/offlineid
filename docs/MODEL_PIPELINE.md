@@ -293,7 +293,7 @@ fun warpAffine(srcBitmap: Bitmap, M: FloatArray, outSize: Int): Bitmap {
 }
 ```
 
-> **Note for Claude Code:** Implement `solveLeastSquares` using Gaussian elimination
+> **Note:** Implement `solveLeastSquares` using Gaussian elimination
 > or use the Apache Commons Math library. Do NOT use OpenCV — it is not bundled with
 > the React Native project and adds ~40 MB. The above manual implementation is sufficient
 > for a 5-point system.
