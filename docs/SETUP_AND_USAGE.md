@@ -5,6 +5,8 @@
 > enrolment/auth; AWS S3 sync-and-purge on reconnect.
 >
 > Read with `SPEC.md`, `ARCHITECTURE.md`, `MODEL_PIPELINE.md`, `BENCHMARKS.md`.
+> For hot reload, on-device logs, and diagnosing "Not recognised", see
+> [`HOT_RELOAD_AND_DEBUGGING.md`](HOT_RELOAD_AND_DEBUGGING.md).
 
 ---
 
@@ -140,6 +142,9 @@ npx react-native run-android           # debug build on a connected device
 
 Debug builds stream JS from Metro, so they need a running dev server and are **not** offline.
 
+> Full hot-reload workflow (Fast Refresh, `adb reverse`, dev menu) and a debugging
+> playbook are in [`HOT_RELOAD_AND_DEBUGGING.md`](HOT_RELOAD_AND_DEBUGGING.md).
+
 ### 4.2 Standalone offline release APK (what you ship)
 
 The release build embeds the JS bundle and runs with no Metro and no network.
@@ -254,6 +259,9 @@ npx tsc --noEmit    # TypeScript typecheck, must be clean
 ---
 
 ## 9. Troubleshooting
+
+> Deeper failure diagnosis (read `adb logcat`, decode "Not recognised", tune thresholds,
+> emulator ABI traps): [`HOT_RELOAD_AND_DEBUGGING.md`](HOT_RELOAD_AND_DEBUGGING.md).
 
 | Symptom | Cause | Fix |
 |---|---|---|
