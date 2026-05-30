@@ -16,6 +16,7 @@ import React, { useEffect, useRef } from 'react';
 import { Animated, Easing, StyleSheet, Text, View } from 'react-native';
 
 import type { Gesture } from '../services/LivenessService';
+import { colors, MONO, radius, space } from '../ui/theme';
 
 /** {@link LivenessPrompt} props. */
 export interface LivenessPromptProps {
@@ -97,13 +98,16 @@ export function LivenessPrompt({
       accessibilityLiveRegion="polite"
       accessibilityLabel={ui.text}
     >
-      <Animated.Text
-        style={[styles.glyph, animatedStyle]}
-        accessibilityElementsHidden
-        importantForAccessibility="no"
-      >
-        {ui.glyph}
-      </Animated.Text>
+      <Text style={styles.kicker}>LIVENESS CHALLENGE</Text>
+      <View style={styles.ring}>
+        <Animated.Text
+          style={[styles.glyph, animatedStyle]}
+          accessibilityElementsHidden
+          importantForAccessibility="no"
+        >
+          {ui.glyph}
+        </Animated.Text>
+      </View>
       <Text style={styles.text}>{ui.text}</Text>
     </View>
   );
@@ -113,20 +117,40 @@ const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 16,
-    paddingHorizontal: 24,
-    borderRadius: 16,
-    backgroundColor: 'rgba(0,0,0,0.6)',
+    paddingVertical: space.xl,
+    paddingHorizontal: space.xxl,
+    borderRadius: radius.lg,
+    backgroundColor: 'rgba(10,14,13,0.82)',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.accentDim,
+  },
+  kicker: {
+    color: colors.accent,
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 2,
+    fontFamily: MONO,
+    marginBottom: space.md,
+  },
+  ring: {
+    width: 92,
+    height: 92,
+    borderRadius: 46,
+    borderWidth: 2,
+    borderColor: colors.accent,
+    backgroundColor: colors.accentGlow,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   glyph: {
-    fontSize: 48,
-    marginBottom: 8,
+    fontSize: 44,
   },
   text: {
-    color: '#FFFFFF',
-    fontSize: 20,
-    fontWeight: '600',
+    color: colors.text,
+    fontSize: 19,
+    fontWeight: '700',
     textAlign: 'center',
+    marginTop: space.lg,
   },
 });
 

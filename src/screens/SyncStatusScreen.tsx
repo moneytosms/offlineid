@@ -10,17 +10,18 @@
 
 import React, { useCallback, useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
   RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from 'react-native';
 
 import { SyncService } from '../services/SyncService';
 import type { SyncResult, SyncStats } from '../services/SyncService';
+import { IS_SYNC_CONFIGURED, SYNC_BASE_URL } from '../config';
+import { Button, Card, Label, Mono, StatRow, Tag } from '../ui/components';
+import { colors, space, type as typo } from '../ui/theme';
 import { logger } from '../utils/logger';
 
 const TAG = 'SyncStatus';
@@ -67,13 +68,7 @@ export function SyncStatusScreen(): React.JSX.Element {
       logger.info(TAG, `sync result synced=${res.synced} failed=${res.failed}`);
     } catch (err) {
       logger.error(TAG, 'manual sync failed', err);
-      setResult({
-        attempted: 0,
-        synced: 0,
-        failed: 0,
-        done: false,
-        error: String(err),
-      });
+      setResult({ attempted: 0, synced: 0, failed: 0, done: false, error: String(err) });
     } finally {
       setSyncing(false);
       await loadStats();
@@ -84,97 +79,113 @@ export function SyncStatusScreen(): React.JSX.Element {
 
   return (
     <ScrollView
-      contentContainerStyle={styles.container}
+      style={styles.scroll}
+      contentContainerStyle={styles.content}
       refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          tintColor={colors.accent}
+        />
       }
     >
-      <Text style={styles.heading}>Sync Status</Text>
-
-      <View style={styles.statRow}>
-        <Text style={styles.statLabel}>Pending records</Text>
-        <Text
-          style={[styles.statValue, pending > 0 && styles.statValueAlert]}
-          accessibilityLabel={`${pending} pending records`}
-        >
-          {pending}
-        </Text>
+      <View style={styles.head}>
+        <Text style={typo.title}>Sync</Text>
+        <View style={styles.titleRule} />
       </View>
 
-      <View style={styles.statRow}>
-        <Text style={styles.statLabel}>Last sync</Text>
-        <Text style={styles.statValue}>
-          {formatLastSync(stats?.lastSync ?? null)}
-        </Text>
-      </View>
+      {/* Big pending counter. */}
+      <Card style={styles.counterCard}>
+        <Text style={styles.counterValue}>{pending}</Text>
+        <Label>{pending === 1 ? 'RECORD QUEUED' : 'RECORDS QUEUED'}</Label>
+        <View style={styles.counterTag}>
+          <Tag tone={pending > 0 ? 'warn' : 'accent'}>
+            {pending > 0 ? 'PENDING UPLOAD' : 'ALL CLEAR'}
+          </Tag>
+        </View>
+      </Card>
 
-      <TouchableOpacity
-        style={[styles.button, (syncing || pending === 0) && styles.buttonDisabled]}
-        disabled={syncing || pending === 0}
+      <Card style={styles.card}>
+        <StatRow label="Last sync" value={formatLastSync(stats?.lastSync ?? null)} />
+        <StatRow
+          label="Backend"
+          value={IS_SYNC_CONFIGURED ? 'configured' : 'placeholder'}
+          tone={IS_SYNC_CONFIGURED ? 'accent' : 'warn'}
+        />
+        <View style={styles.endpoint}>
+          <Mono style={styles.endpointText}>{SYNC_BASE_URL}</Mono>
+        </View>
+      </Card>
+
+      <Button
+        label={pending === 0 ? 'Nothing to sync' : `Sync ${pending} now`}
         onPress={onSync}
-        accessibilityRole="button"
-        accessibilityLabel="Sync now"
-        accessibilityState={{ disabled: syncing || pending === 0, busy: syncing }}
-      >
-        {syncing ? (
-          <ActivityIndicator color="#FFF" />
-        ) : (
-          <Text style={styles.buttonText}>
-            {pending === 0 ? 'Nothing to sync' : 'Sync now'}
-          </Text>
-        )}
-      </TouchableOpacity>
+        loading={syncing}
+        disabled={pending === 0}
+        style={styles.syncBtn}
+      />
 
       {result != null && (
-        <View
-          style={[
-            styles.resultCard,
-            result.error ? styles.resultError : styles.resultOk,
-          ]}
-          accessibilityLiveRegion="polite"
+        <Card
+          style={[styles.resultCard, result.error ? styles.resultErr : styles.resultOk]}
         >
-          {result.error ? (
-            <Text style={styles.resultText}>Sync failed: {result.error}</Text>
-          ) : (
-            <Text style={styles.resultText}>
-              Synced {result.synced} of {result.attempted}
-              {result.failed > 0 ? `, ${result.failed} failed` : ''}
-              {result.done ? ' — queue empty' : ' — more pending'}
-            </Text>
-          )}
-        </View>
+          <Label style={result.error ? styles.resultLabelErr : styles.resultLabelOk}>
+            {result.error ? 'SYNC FAILED' : 'SYNC COMPLETE'}
+          </Label>
+          <Text style={styles.resultText}>
+            {result.error
+              ? result.error
+              : `Synced ${result.synced} of ${result.attempted}` +
+                (result.failed > 0 ? `, ${result.failed} failed` : '') +
+                (result.done ? ' — queue empty' : ' — more pending')}
+          </Text>
+        </Card>
       )}
+
+      <Text style={styles.note}>
+        Records sync to AWS S3 and are purged locally once confirmed. Sync runs
+        automatically when connectivity returns; pull to refresh.
+      </Text>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 24, backgroundColor: '#FFF', flexGrow: 1 },
-  heading: { fontSize: 24, fontWeight: '700', marginBottom: 24, color: '#111' },
-  statRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 14,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#E0E0E0',
+  scroll: { flex: 1, backgroundColor: colors.bg },
+  content: { padding: space.xl, paddingBottom: space.xxxl },
+  head: { marginBottom: space.xl },
+  titleRule: {
+    marginTop: space.md,
+    height: 2,
+    width: 40,
+    backgroundColor: colors.accent,
+    borderRadius: 2,
   },
-  statLabel: { fontSize: 16, color: '#555' },
-  statValue: { fontSize: 16, fontWeight: '600', color: '#111' },
-  statValueAlert: { color: '#E53935' },
-  button: {
-    marginTop: 28,
-    backgroundColor: '#1565C0',
-    borderRadius: 10,
-    paddingVertical: 14,
-    alignItems: 'center',
+  counterCard: { alignItems: 'center', paddingVertical: space.xxl },
+  counterValue: {
+    fontSize: 64,
+    fontWeight: '900',
+    color: colors.text,
+    letterSpacing: -2,
   },
-  buttonDisabled: { backgroundColor: '#90A4AE' },
-  buttonText: { color: '#FFF', fontSize: 16, fontWeight: '600' },
-  resultCard: { marginTop: 20, padding: 16, borderRadius: 10 },
-  resultOk: { backgroundColor: '#E8F5E9' },
-  resultError: { backgroundColor: '#FFEBEE' },
-  resultText: { fontSize: 14, color: '#111' },
+  counterTag: { marginTop: space.md },
+  card: { marginTop: space.lg, paddingVertical: space.xs },
+  endpoint: { paddingTop: space.md },
+  endpointText: { color: colors.textDim, fontSize: 12 },
+  syncBtn: { marginTop: space.xl },
+  resultCard: { marginTop: space.lg, gap: space.sm },
+  resultOk: { borderColor: colors.accentDim },
+  resultErr: { borderColor: 'rgba(255,82,82,0.4)' },
+  resultLabelOk: { color: colors.accent },
+  resultLabelErr: { color: colors.danger },
+  resultText: { ...typo.body, fontSize: 14, color: colors.textDim },
+  note: {
+    ...typo.muted,
+    fontSize: 12,
+    lineHeight: 18,
+    marginTop: space.xl,
+    color: colors.textFaint,
+  },
 });
 
 export default SyncStatusScreen;

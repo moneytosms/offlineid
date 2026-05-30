@@ -20,8 +20,6 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
-  TouchableOpacity,
   View,
 } from 'react-native';
 
@@ -33,6 +31,8 @@ import type {
 import { FaceEngine } from '../services/FaceEngine';
 import type { BoundingBox } from '../services/FaceEngine';
 import { EmbeddingStore } from '../services/EmbeddingStore';
+import { Button, Field, Tag } from '../ui/components';
+import { colors, MONO, space, type as typo } from '../ui/theme';
 import { logger } from '../utils/logger';
 
 const TAG = 'Enroll';
@@ -185,30 +185,42 @@ export function EnrollScreen({
 
   if (phase === 'form') {
     return (
-      <ScrollView contentContainerStyle={styles.formContainer}>
-        <Text style={styles.heading}>Enrol Employee</Text>
+      <ScrollView
+        style={styles.formScroll}
+        contentContainerStyle={styles.formContainer}
+        keyboardShouldPersistTaps="handled"
+      >
+        <Text style={typo.title}>Enrol</Text>
+        <View style={styles.titleRule} />
+        <Text style={styles.formIntro}>
+          Register a person’s faceprint with three captures.
+        </Text>
+
         <Field
           label="Employee ID"
           value={employeeId}
           onChangeText={setEmployeeId}
+          placeholder="e.g. NHAI-0481"
           autoCapitalize="characters"
         />
-        <Field label="Name" value={name} onChangeText={setName} />
+        <Field
+          label="Name"
+          value={name}
+          onChangeText={setName}
+          placeholder="Full name"
+        />
         <Field
           label="Department"
           value={department}
           onChangeText={setDepartment}
+          placeholder="Optional"
         />
-        <TouchableOpacity
-          style={[styles.button, !formValid && styles.buttonDisabled]}
-          disabled={!formValid}
+        <Button
+          label="Begin capture"
           onPress={startCapture}
-          accessibilityRole="button"
-          accessibilityLabel="Begin face capture"
-          accessibilityState={{ disabled: !formValid }}
-        >
-          <Text style={styles.buttonText}>Begin Capture</Text>
-        </TouchableOpacity>
+          disabled={!formValid}
+          style={styles.formBtn}
+        />
       </ScrollView>
     );
   }
@@ -216,17 +228,14 @@ export function EnrollScreen({
   if (phase === 'done') {
     return (
       <View style={styles.center}>
-        <Text style={styles.success} accessibilityLiveRegion="assertive">
-          ✓ Enrolled {name.trim()}
+        <View style={styles.doneRing}>
+          <Text style={styles.doneCheck}>✓</Text>
+        </View>
+        <Text style={styles.doneTitle} accessibilityLiveRegion="assertive">
+          Enrolled
         </Text>
-        <TouchableOpacity
-          style={styles.button}
-          onPress={reset}
-          accessibilityRole="button"
-          accessibilityLabel="Enrol another employee"
-        >
-          <Text style={styles.buttonText}>Enrol Another</Text>
-        </TouchableOpacity>
+        <Text style={styles.doneName}>{name.trim()}</Text>
+        <Button label="Enrol another" onPress={reset} style={styles.doneBtn} />
       </View>
     );
   }
@@ -241,57 +250,50 @@ export function EnrollScreen({
         isActive={phase === 'capturing'}
       />
 
+      {/* Scanner reticle. */}
+      <View style={styles.reticleWrap} pointerEvents="none">
+        <View style={[styles.reticle, stable && styles.reticleLocked]} />
+      </View>
+
+      <View style={styles.topBar} pointerEvents="none">
+        <Tag tone={stable ? 'accent' : 'muted'}>
+          {stable ? 'FACE LOCKED' : 'ALIGN FACE'}
+        </Tag>
+      </View>
+
       <View style={styles.overlay} pointerEvents="box-none">
-        <Text style={styles.captureCounter} accessibilityLiveRegion="polite">
+        {/* Capture progress dots. */}
+        <View style={styles.dots}>
+          {Array.from({ length: REQUIRED_CAPTURES }).map((_, i) => (
+            <View
+              key={i}
+              style={[styles.dot, i < captureIndex && styles.dotFilled]}
+            />
+          ))}
+        </View>
+
+        <Text style={styles.captureHint} accessibilityLiveRegion="polite">
+          {currentLabel}
+        </Text>
+        <Text style={styles.captureCount}>
           {captureIndex}/{REQUIRED_CAPTURES} captured
         </Text>
-        <Text style={styles.captureHint}>{currentLabel}</Text>
         {error != null && <Text style={styles.error}>{error}</Text>}
 
         {phase === 'saving' ? (
-          <ActivityIndicator size="large" color="#FFFFFF" />
+          <View style={styles.savingRow}>
+            <ActivityIndicator color={colors.accent} />
+            <Text style={styles.savingText}>SAVING FACEPRINT…</Text>
+          </View>
         ) : (
-          <TouchableOpacity
-            style={[styles.button, !stable && styles.buttonDisabled]}
-            disabled={!stable}
+          <Button
+            label={stable ? `Capture ${captureIndex + 1}` : 'Hold still…'}
             onPress={onCapture}
-            accessibilityRole="button"
-            accessibilityLabel={`Capture ${captureIndex + 1} of ${REQUIRED_CAPTURES}`}
-            accessibilityState={{ disabled: !stable }}
-          >
-            <Text style={styles.buttonText}>
-              {stable ? 'Capture' : 'Hold still…'}
-            </Text>
-          </TouchableOpacity>
+            disabled={!stable}
+            style={styles.captureBtn}
+          />
         )}
       </View>
-    </View>
-  );
-}
-
-/** Labelled text input row. */
-function Field({
-  label,
-  value,
-  onChangeText,
-  autoCapitalize = 'sentences',
-}: {
-  label: string;
-  value: string;
-  onChangeText: (t: string) => void;
-  autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
-}): React.JSX.Element {
-  return (
-    <View style={styles.field}>
-      <Text style={styles.fieldLabel}>{label}</Text>
-      <TextInput
-        style={styles.input}
-        value={value}
-        onChangeText={onChangeText}
-        autoCapitalize={autoCapitalize}
-        accessibilityLabel={label}
-        placeholderTextColor="#9E9E9E"
-      />
     </View>
   );
 }
@@ -302,44 +304,78 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 24,
-    backgroundColor: '#FFF',
+    padding: space.xl,
+    backgroundColor: colors.bg,
   },
-  formContainer: { padding: 24, backgroundColor: '#FFF', flexGrow: 1 },
-  heading: { fontSize: 24, fontWeight: '700', marginBottom: 24, color: '#111' },
-  field: { marginBottom: 16 },
-  fieldLabel: { fontSize: 14, color: '#555', marginBottom: 4 },
-  input: {
-    borderWidth: 1,
-    borderColor: '#CCC',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 16,
-    color: '#111',
+  formScroll: { flex: 1, backgroundColor: colors.bg },
+  formContainer: { padding: space.xl, paddingBottom: space.xxxl, flexGrow: 1 },
+  titleRule: {
+    marginTop: space.md,
+    height: 2,
+    width: 40,
+    backgroundColor: colors.accent,
+    borderRadius: 2,
   },
-  button: {
-    backgroundColor: '#1565C0',
-    borderRadius: 10,
-    paddingVertical: 14,
-    paddingHorizontal: 24,
+  formIntro: { ...typo.muted, marginTop: space.lg, marginBottom: space.xl },
+  formBtn: { marginTop: space.md },
+
+  // Done state.
+  doneRing: {
+    width: 92,
+    height: 92,
+    borderRadius: 46,
+    borderWidth: 2,
+    borderColor: colors.accent,
+    backgroundColor: colors.accentGlow,
     alignItems: 'center',
-    marginTop: 16,
+    justifyContent: 'center',
   },
-  buttonDisabled: { backgroundColor: '#90A4AE' },
-  buttonText: { color: '#FFF', fontSize: 16, fontWeight: '600' },
+  doneCheck: { color: colors.accent, fontSize: 48, fontWeight: '800' },
+  doneTitle: {
+    ...typo.label,
+    color: colors.accent,
+    marginTop: space.xl,
+    fontSize: 13,
+  },
+  doneName: { ...typo.title, marginTop: space.xs },
+  doneBtn: { marginTop: space.xxl, alignSelf: 'stretch' },
+
+  // Capture overlay.
+  reticleWrap: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center' },
+  reticle: {
+    width: 240,
+    height: 300,
+    borderRadius: 140,
+    borderWidth: 2,
+    borderColor: 'rgba(141,163,155,0.5)',
+    borderStyle: 'dashed',
+  },
+  reticleLocked: { borderColor: colors.accent, borderStyle: 'solid' },
+  topBar: { position: 'absolute', top: space.xl, left: 0, right: 0, alignItems: 'center' },
   overlay: {
     position: 'absolute',
     left: 0,
     right: 0,
     bottom: 0,
-    padding: 24,
+    padding: space.xl,
+    paddingBottom: space.xxl,
     alignItems: 'center',
+    backgroundColor: 'rgba(10,14,13,0.55)',
   },
-  captureCounter: { color: '#FFF', fontSize: 18, fontWeight: '700' },
-  captureHint: { color: '#E0E0E0', fontSize: 16, marginTop: 4 },
-  success: { fontSize: 22, fontWeight: '700', color: '#2E7D32', marginBottom: 24 },
-  error: { color: '#FF8A80', fontSize: 14, marginTop: 8, textAlign: 'center' },
+  dots: { flexDirection: 'row', gap: space.sm, marginBottom: space.lg },
+  dot: {
+    width: 28,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: colors.lineBright,
+  },
+  dotFilled: { backgroundColor: colors.accent },
+  captureHint: { color: colors.text, fontSize: 18, fontWeight: '700' },
+  captureCount: { color: colors.textDim, fontFamily: MONO, fontSize: 12, marginTop: 4 },
+  error: { color: colors.danger, fontSize: 13, marginTop: space.sm, textAlign: 'center' },
+  captureBtn: { marginTop: space.lg, alignSelf: 'stretch' },
+  savingRow: { flexDirection: 'row', alignItems: 'center', gap: space.md, marginTop: space.lg },
+  savingText: { color: colors.accent, fontFamily: MONO, fontSize: 12, letterSpacing: 1 },
 });
 
 export default EnrollScreen;

@@ -1,9 +1,9 @@
 /**
  * OfflineID — root application shell.
  *
- * Lightweight state-based navigation between the three module screens
- * (Auth / Enroll / Sync), pre-warms the native ONNX engine on launch, and
- * surfaces the unsynced-record badge in the header.
+ * State-based navigation across the five terminal sections (Scan / Enroll /
+ * People / Sync / Settings, plus a pushed About view), pre-warms the native
+ * ONNX engine + opens the local DB on launch, and renders the branded header.
  *
  * @format
  */
@@ -24,29 +24,35 @@ import {openDatabase} from './src/db/migrations';
 import {AuthScreen} from './src/screens/AuthScreen';
 import {EnrollScreen} from './src/screens/EnrollScreen';
 import {SyncStatusScreen} from './src/screens/SyncStatusScreen';
+import {PeopleScreen} from './src/screens/PeopleScreen';
+import {SettingsScreen} from './src/screens/SettingsScreen';
+import {AboutScreen} from './src/screens/AboutScreen';
 import {SyncBadge} from './src/components/SyncBadge';
 import {useNetworkSync} from './src/hooks/useNetworkSync';
 import {logger} from './src/utils/logger';
+import {colors, MONO, space} from './src/ui/theme';
 
-type Tab = 'auth' | 'enroll' | 'sync';
+type Tab = 'auth' | 'enroll' | 'people' | 'sync' | 'settings';
+type View_ = Tab | 'about';
 
 // Stable per-install device identifier (replace with Datalake 3.0 device id).
 const DEVICE_ID = 'datalake-device-001';
 
-const TABS: {key: Tab; label: string}[] = [
-  {key: 'auth', label: 'Authenticate'},
-  {key: 'enroll', label: 'Enroll'},
-  {key: 'sync', label: 'Sync'},
+const TABS: {key: Tab; label: string; glyph: string}[] = [
+  {key: 'auth', label: 'Scan', glyph: '◎'},
+  {key: 'enroll', label: 'Enrol', glyph: '＋'},
+  {key: 'people', label: 'People', glyph: '☰'},
+  {key: 'sync', label: 'Sync', glyph: '⟳'},
+  {key: 'settings', label: 'System', glyph: '⚙'},
 ];
 
 function App(): React.JSX.Element {
   const [engineReady, setEngineReady] = useState(false);
   const [dbReady, setDbReady] = useState(false);
   const [engineError, setEngineError] = useState<string | null>(null);
-  const [tab, setTab] = useState<Tab>('auth');
+  const [view, setView] = useState<View_>('auth');
 
-  // Open the local database before anything reads it (stores + sync). Gated by
-  // `dbReady` so useNetworkSync only runs once the schema exists.
+  // Open the local database before anything reads it (stores + sync).
   useEffect(() => {
     let cancelled = false;
     openDatabase()
@@ -73,15 +79,11 @@ function App(): React.JSX.Element {
     }
     FaceEngine.initModels()
       .then(() => {
-        if (!cancelled) {
-          setEngineReady(true);
-        }
+        if (!cancelled) setEngineReady(true);
       })
       .catch((e: unknown) => {
         logger.error('App', 'initModels failed', {error: String(e)});
-        if (!cancelled) {
-          setEngineError(String(e));
-        }
+        if (!cancelled) setEngineError(String(e));
       });
     return () => {
       cancelled = true;
@@ -89,12 +91,14 @@ function App(): React.JSX.Element {
     };
   }, []);
 
-  const handleEnrolled = useCallback(() => setTab('auth'), []);
+  const handleEnrolled = useCallback(() => setView('people'), []);
 
   if (engineError) {
     return (
       <SafeAreaView style={[styles.flex, styles.center]}>
-        <Text style={styles.errorTitle}>AI engine unavailable</Text>
+        <StatusBar barStyle="light-content" backgroundColor={colors.bg} />
+        <Text style={styles.bootGlyph}>⚠</Text>
+        <Text style={styles.errorTitle}>SYSTEM FAULT</Text>
         <Text style={styles.errorBody}>{engineError}</Text>
       </SafeAreaView>
     );
@@ -103,68 +107,166 @@ function App(): React.JSX.Element {
   if (!engineReady || !dbReady) {
     return (
       <SafeAreaView style={[styles.flex, styles.center]}>
-        <ActivityIndicator size="large" color="#00E676" />
-        <Text style={styles.loading}>
-          {dbReady
-            ? 'Loading face-recognition models…'
-            : 'Preparing local database…'}
+        <StatusBar barStyle="light-content" backgroundColor={colors.bg} />
+        <Text style={styles.bootBrand}>OFFLINE·ID</Text>
+        <ActivityIndicator size="large" color={colors.accent} style={styles.bootSpin} />
+        <Text style={styles.bootStatus}>
+          {dbReady ? 'LOADING NEURAL MODELS' : 'PREPARING SECURE STORE'}
         </Text>
+        <Text style={styles.bootSub}>on-device · offline</Text>
       </SafeAreaView>
     );
   }
 
+  const activeTab: Tab = view === 'about' ? 'settings' : view;
+
   return (
     <SafeAreaView style={styles.flex}>
-      <StatusBar barStyle="light-content" backgroundColor="#101418" />
+      <StatusBar barStyle="light-content" backgroundColor={colors.bg} />
+
       <View style={styles.header}>
-        <Text style={styles.title}>OfflineID</Text>
-        <SyncBadge />
+        <View>
+          <Text style={styles.brand}>OFFLINE·ID</Text>
+          <Text style={styles.brandSub}>BIOMETRIC FIELD TERMINAL</Text>
+        </View>
+        <View style={styles.headerRight}>
+          <SyncBadge />
+          <Text style={styles.deviceId}>{DEVICE_ID}</Text>
+        </View>
       </View>
 
       <View style={styles.flex}>
-        {tab === 'auth' && <AuthScreen deviceId={DEVICE_ID} />}
-        {tab === 'enroll' && <EnrollScreen onEnrolled={handleEnrolled} />}
-        {tab === 'sync' && <SyncStatusScreen />}
+        {view === 'auth' && <AuthScreen deviceId={DEVICE_ID} />}
+        {view === 'enroll' && <EnrollScreen onEnrolled={handleEnrolled} />}
+        {view === 'people' && (
+          <PeopleScreen onEnrolNew={() => setView('enroll')} />
+        )}
+        {view === 'sync' && <SyncStatusScreen />}
+        {view === 'settings' && (
+          <SettingsScreen
+            deviceId={DEVICE_ID}
+            onOpenAbout={() => setView('about')}
+          />
+        )}
+        {view === 'about' && <AboutScreen onBack={() => setView('settings')} />}
       </View>
 
       <View style={styles.tabBar}>
-        {TABS.map(t => (
-          <TouchableOpacity
-            key={t.key}
-            style={[styles.tab, tab === t.key && styles.tabActive]}
-            onPress={() => setTab(t.key)}
-            accessibilityRole="button"
-            accessibilityState={{selected: tab === t.key}}>
-            <Text style={[styles.tabText, tab === t.key && styles.tabTextActive]}>
-              {t.label}
-            </Text>
-          </TouchableOpacity>
-        ))}
+        {TABS.map(t => {
+          const active = activeTab === t.key;
+          return (
+            <TouchableOpacity
+              key={t.key}
+              style={styles.tab}
+              onPress={() => setView(t.key)}
+              accessibilityRole="button"
+              accessibilityState={{selected: active}}
+              accessibilityLabel={t.label}>
+              <Text style={[styles.tabGlyph, active && styles.tabGlyphActive]}>
+                {t.glyph}
+              </Text>
+              <Text style={[styles.tabText, active && styles.tabTextActive]}>
+                {t.label}
+              </Text>
+              {active && <View style={styles.tabMarker} />}
+            </TouchableOpacity>
+          );
+        })}
       </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  flex: {flex: 1, backgroundColor: '#101418'},
+  flex: {flex: 1, backgroundColor: colors.bg},
   center: {alignItems: 'center', justifyContent: 'center'},
-  loading: {color: '#cfd8dc', marginTop: 16, fontSize: 15},
-  errorTitle: {color: '#ff5252', fontSize: 20, fontWeight: '700'},
-  errorBody: {color: '#cfd8dc', marginTop: 12, paddingHorizontal: 32, textAlign: 'center'},
+
+  // Boot / error.
+  bootBrand: {
+    fontSize: 30,
+    fontWeight: '900',
+    letterSpacing: 6,
+    color: colors.text,
+  },
+  bootSpin: {marginTop: space.xxl},
+  bootStatus: {
+    marginTop: space.xl,
+    color: colors.accent,
+    fontFamily: MONO,
+    fontSize: 12,
+    letterSpacing: 1.5,
+  },
+  bootSub: {marginTop: space.sm, color: colors.textFaint, fontSize: 12, letterSpacing: 1},
+  bootGlyph: {fontSize: 44, color: colors.danger},
+  errorTitle: {
+    color: colors.danger,
+    fontSize: 20,
+    fontWeight: '800',
+    letterSpacing: 2,
+    marginTop: space.md,
+  },
+  errorBody: {
+    color: colors.textDim,
+    marginTop: space.md,
+    paddingHorizontal: space.xxl,
+    textAlign: 'center',
+    fontFamily: MONO,
+    fontSize: 12,
+  },
+
+  // Header.
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: '#161c22',
+    paddingHorizontal: space.xl,
+    paddingVertical: space.md,
+    backgroundColor: colors.surface,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.line,
   },
-  title: {color: '#ffffff', fontSize: 20, fontWeight: '700'},
-  tabBar: {flexDirection: 'row', backgroundColor: '#161c22'},
-  tab: {flex: 1, paddingVertical: 14, alignItems: 'center'},
-  tabActive: {borderTopWidth: 2, borderTopColor: '#00E676'},
-  tabText: {color: '#90a4ae', fontSize: 14},
-  tabTextActive: {color: '#00E676', fontWeight: '700'},
+  brand: {color: colors.text, fontSize: 18, fontWeight: '900', letterSpacing: 3},
+  brandSub: {
+    color: colors.accent,
+    fontSize: 9,
+    fontWeight: '700',
+    letterSpacing: 2,
+    marginTop: 2,
+  },
+  headerRight: {alignItems: 'flex-end'},
+  deviceId: {
+    color: colors.textFaint,
+    fontFamily: MONO,
+    fontSize: 10,
+    marginTop: 4,
+  },
+
+  // Tab bar.
+  tabBar: {
+    flexDirection: 'row',
+    backgroundColor: colors.surface,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.line,
+    paddingBottom: space.xs,
+  },
+  tab: {flex: 1, paddingVertical: space.md, alignItems: 'center'},
+  tabGlyph: {fontSize: 20, color: colors.textFaint, marginBottom: 3},
+  tabGlyphActive: {color: colors.accent},
+  tabText: {
+    color: colors.textFaint,
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 1,
+  },
+  tabTextActive: {color: colors.text},
+  tabMarker: {
+    position: 'absolute',
+    top: 0,
+    height: 2,
+    width: 28,
+    backgroundColor: colors.accent,
+    borderRadius: 2,
+  },
 });
 
 export default App;

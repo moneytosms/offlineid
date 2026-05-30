@@ -11,6 +11,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { SyncService } from '../services/SyncService';
+import { colors, MONO } from '../ui/theme';
 import { logger } from '../utils/logger';
 
 const TAG = 'SyncBadge';
@@ -65,9 +66,9 @@ export function SyncBadge({
         hasPending ? `${pending} records pending sync` : 'All records synced'
       }
     >
-      {hasPending && <View style={styles.dot} />}
+      <View style={[styles.dot, hasPending ? styles.dotPending : styles.dotOk]} />
       <Text style={[styles.label, hasPending ? styles.pending : styles.synced]}>
-        {hasPending ? `${pending} pending` : 'Synced'}
+        {hasPending ? `${pending} QUEUED` : 'SYNCED'}
       </Text>
     </View>
   );
@@ -79,18 +80,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   dot: {
-    width: 8,
-    height: 8,
+    width: 7,
+    height: 7,
     borderRadius: 4,
-    backgroundColor: '#E53935',
     marginRight: 6,
   },
+  dotPending: { backgroundColor: colors.warn },
+  dotOk: { backgroundColor: colors.accent },
   label: {
-    fontSize: 13,
-    fontWeight: '600',
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 1,
+    fontFamily: MONO,
   },
-  pending: { color: '#E53935' },
-  synced: { color: '#9E9E9E' },
+  pending: { color: colors.warn },
+  synced: { color: colors.textDim },
 });
 
 export default SyncBadge;

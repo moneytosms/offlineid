@@ -161,6 +161,31 @@ export const AttendanceStore = {
     );
     return result.rows.item(0).cnt as number;
   },
+
+  /**
+   * Recent events of any type, newest first (for the activity view).
+   *
+   * @param limit - Maximum rows (default 50).
+   */
+  async getRecentEvents(limit = 50): Promise<AttendanceLogRow[]> {
+    const db = getDb();
+    const [result] = await db.executeSql(
+      `SELECT * FROM attendance_log ORDER BY created_at DESC LIMIT ?;`,
+      [limit],
+    );
+    const rows: AttendanceLogRow[] = [];
+    for (let i = 0; i < result.rows.length; i++) {
+      rows.push(result.rows.item(i) as AttendanceLogRow);
+    }
+    return rows;
+  },
+
+  /** Delete all attendance rows (factory reset). Returns rows removed. */
+  async deleteAll(): Promise<number> {
+    const db = getDb();
+    const [result] = await db.executeSql(`DELETE FROM attendance_log;`);
+    return result.rowsAffected;
+  },
 };
 
 export default AttendanceStore;

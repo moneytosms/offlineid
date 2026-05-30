@@ -25,6 +25,18 @@ export interface EnrolledEmbedding {
   embedding: Float32Array;
 }
 
+/** Lightweight enrolment metadata (no embedding decrypt). */
+export interface EnrolledPerson {
+  /** Datalake 3.0 employee identifier. */
+  employeeId: string;
+  /** Display name. */
+  name: string;
+  /** Department label, or null. */
+  department: string | null;
+  /** Enrolment time, Unix timestamp ms. */
+  enrolledAt: number;
+}
+
 /** Encode raw bytes to a lowercase hex string. */
 function bytesToHex(bytes: Uint8Array): string {
   let out = '';
@@ -111,6 +123,39 @@ export const EmbeddingStore = {
   },
 
   /**
+   * List enrolment metadata (no embedding decryption), newest first.
+   *
+   * @returns One {@link EnrolledPerson} per enrolled row.
+   */
+  async listEnrolled(): Promise<EnrolledPerson[]> {
+    const db = getDb();
+    const [result] = await db.executeSql(
+      `SELECT employee_id, name, department, enrolled_at
+       FROM face_embeddings ORDER BY enrolled_at DESC;`,
+    );
+    const out: EnrolledPerson[] = [];
+    for (let i = 0; i < result.rows.length; i++) {
+      const row = result.rows.item(i);
+      out.push({
+        employeeId: row.employee_id as string,
+        name: row.name as string,
+        department: (row.department as string | null) ?? null,
+        enrolledAt: row.enrolled_at as number,
+      });
+    }
+    return out;
+  },
+
+  /** Count enrolled people. */
+  async count(): Promise<number> {
+    const db = getDb();
+    const [result] = await db.executeSql(
+      `SELECT COUNT(*) AS cnt FROM face_embeddings;`,
+    );
+    return result.rows.item(0).cnt as number;
+  },
+
+  /**
    * Delete an enrolled person by employee id.
    *
    * @param employeeId - Employee identifier to remove.
@@ -122,6 +167,13 @@ export const EmbeddingStore = {
       `DELETE FROM face_embeddings WHERE employee_id = ?;`,
       [employeeId],
     );
+    return result.rowsAffected;
+  },
+
+  /** Delete all enrolments (factory reset). Returns rows removed. */
+  async deleteAll(): Promise<number> {
+    const db = getDb();
+    const [result] = await db.executeSql(`DELETE FROM face_embeddings;`);
     return result.rowsAffected;
   },
 };
