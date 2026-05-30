@@ -83,9 +83,11 @@ cd scripts
 | Script | Output |
 |---|---|
 | `build_pptx.py` | `../submission/OfflineID_Hackathon7.pptx` (16-slide themed deck) |
+| `md_to_pdf.py` | render any Markdown to a clean PDF (e.g. `../submission/READMEFIRST.pdf`) |
 
 ```bash
 .venv\Scripts\python.exe scripts/build_pptx.py
+.venv\Scripts\python.exe scripts/md_to_pdf.py submission/READMEFIRST.md
 ```
 
 ---
@@ -93,5 +95,6 @@ cd scripts
 ## `requirements.txt`
 
 Python deps for the model pipeline + deck: `onnx`, `onnxruntime`, `onnx-simplifier`,
-`insightface`, `torch` (CPU), `opencv-python`, `numpy`, `scikit-image`, `python-pptx`.
+`insightface`, `torch` (CPU), `opencv-python`, `numpy`, `scikit-image`, `python-pptx`,
+`markdown`, `xhtml2pdf` (Markdown to PDF).
 Installed by `install_deps.py` (Torch is pulled from the CPU index separately).
