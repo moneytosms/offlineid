@@ -40,12 +40,29 @@ import RNFS from 'react-native-fs';
 
 import type { BoundingBox } from '../services/FaceEngine';
 import type { MLKitFaceFrame } from '../services/LivenessService';
+import { ScreenBrightness } from '../services/ScreenBrightness';
 import { logger } from '../utils/logger';
 
 const TAG = 'CameraView';
 
 /** Process every Nth frame (SPEC §6.4). */
 export const FRAME_GATE = 5;
+
+/**
+ * Sample mean luminance every Nth frame for the low-light brightness boost.
+ * Coarser than {@link FRAME_GATE}: reading the frame buffer is heavier than the
+ * face stream, and ambient light changes slowly.
+ */
+const LUMA_GATE = 30;
+
+/** Sample 1 of every N Y-plane bytes when averaging luminance (cheap estimate). */
+const LUMA_STRIDE = 64;
+
+/** Mean Y (0–255) below this = dark → boost screen to act as a fill light. */
+const LUMA_LOW = 55;
+
+/** Mean Y above this (hysteresis gap vs {@link LUMA_LOW}) = restore brightness. */
+const LUMA_HIGH = 90;
 
 /** Default bbox overlay colour. */
 const DEFAULT_OVERLAY_COLOR = '#00E676';
@@ -80,6 +97,11 @@ export interface CameraViewProps {
   front?: boolean;
   /** Whether the camera is actively streaming (default true). */
   isActive?: boolean;
+  /**
+   * Auto-max screen brightness in low light so the display lights the subject's
+   * face (default true). Restored when the scene brightens or the camera stops.
+   */
+  autoBrightness?: boolean;
 }
 
 /** No-op face sink (default when no `onFaces` is supplied). */
@@ -97,6 +119,7 @@ function CameraViewInner(
     overlayColor = DEFAULT_OVERLAY_COLOR,
     front = true,
     isActive = true,
+    autoBrightness = true,
   }: CameraViewProps,
   ref: React.Ref<CameraViewHandle>,
 ): React.JSX.Element {
@@ -106,6 +129,46 @@ function CameraViewInner(
 
   // Frame counter lives on the worklet thread so the gate is allocation-free.
   const frameCount = useSharedValue(0);
+
+  // Whether the screen is currently boosted for low light (JS thread).
+  const boosted = useRef(false);
+
+  /** Apply hysteresis on a luminance sample: boost when dark, restore when bright. */
+  const onLuma = useCallback(
+    (avgLuma: number): void => {
+      if (!autoBrightness) return;
+      if (!boosted.current && avgLuma < LUMA_LOW) {
+        boosted.current = true;
+        void ScreenBrightness.setBrightness(1);
+        logger.debug(TAG, `low light (luma=${avgLuma.toFixed(0)}) → brightness max`);
+      } else if (boosted.current && avgLuma > LUMA_HIGH) {
+        boosted.current = false;
+        void ScreenBrightness.restore();
+        logger.debug(TAG, `light ok (luma=${avgLuma.toFixed(0)}) → brightness restored`);
+      }
+    },
+    [autoBrightness],
+  );
+
+  const onLumaJS = useMemo(() => Worklets.createRunOnJS(onLuma), [onLuma]);
+
+  // Restore brightness when the camera stops, auto-boost is disabled, or unmounts.
+  useEffect(() => {
+    if ((!isActive || !autoBrightness) && boosted.current) {
+      boosted.current = false;
+      void ScreenBrightness.restore();
+    }
+  }, [isActive, autoBrightness]);
+
+  useEffect(
+    () => () => {
+      if (boosted.current) {
+        boosted.current = false;
+        void ScreenBrightness.restore();
+      }
+    },
+    [],
+  );
 
   // Detector options must be referentially stable (the hook memoises on them).
   const detectorOptions = useMemo<FrameFaceDetectionOptions>(
@@ -138,8 +201,26 @@ function CameraViewInner(
   const frameProcessor = useFrameProcessor(
     (frame: Frame) => {
       'worklet';
-      // Frame gate: forward only every Nth frame to JS (SPEC §6.4).
       frameCount.value += 1;
+
+      // Low-light sampling: average a sparse set of Y-plane (luminance) bytes
+      // on a coarse cadence and hand the mean to JS, which decides whether to
+      // boost the screen. Guarded by `autoBrightness`; reads the buffer only
+      // every LUMA_GATE frames to keep the worklet cheap.
+      if (autoBrightness && frameCount.value % LUMA_GATE === 0) {
+        const buffer = frame.toArrayBuffer();
+        const data = new Uint8Array(buffer);
+        const ySize = Math.min(frame.width * frame.height, data.length);
+        let sum = 0;
+        let n = 0;
+        for (let i = 0; i < ySize; i += LUMA_STRIDE) {
+          sum += data[i];
+          n += 1;
+        }
+        if (n > 0) onLumaJS(sum / n);
+      }
+
+      // Frame gate: forward only every Nth frame to JS (SPEC §6.4).
       if (frameCount.value % FRAME_GATE !== 0) return;
 
       // Map detector faces inline — referencing a separate worklet here makes
@@ -163,7 +244,7 @@ function CameraViewInner(
       }
       onFacesJS(out);
     },
-    [onFacesJS, detectFaces],
+    [onFacesJS, detectFaces, onLumaJS, autoBrightness],
   );
 
   useImperativeHandle(
@@ -225,6 +306,7 @@ function CameraViewInner(
         device={device}
         isActive={isActive}
         photo={true}
+        pixelFormat="yuv"
         frameProcessor={frameProcessor}
         accessibilityLabel="Camera preview"
       />
