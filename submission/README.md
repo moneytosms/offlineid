@@ -15,6 +15,7 @@ field (your GitHub repo / Google Drive).
 
 | File | Purpose | Maps to deliverable |
 |---|---|---|
+| `READMEFIRST.md` / `.pdf` | Start-here orientation: what this is + what each doc is | - |
 | `README.md` | This index + how to submit | - |
 | `01-PROPOSAL.md` | Solution overview: problem → approach → why it wins | Presentation |
 | `02-DATALAKE-3.0-INTEGRATION.md` | **Exact steps to drop OfflineID into Datalake 3.0** | Feasibility / Integration steps |
