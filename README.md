@@ -1,105 +1,190 @@
-# OfflineID — Offline Facial Recognition & Liveness Detection
-### Hackathon 7.0 · Datalake 3.0 Integration Module
+<div align="center">
 
-> **Evaluator quick-start:** Get the demo running in under 5 minutes.
+# OFFLINE·ID
 
----
+### Secure offline facial recognition & liveness detection for field personnel in zero-network zones
 
-## What it does
+**NHAI Hackathon 7.0 · Datalake 3.0 integration module**
 
-OfflineID authenticates field personnel using facial recognition and liveness detection
-**entirely without an internet connection**. It runs three lightweight ONNX models
-on-device (Android 8+ / iOS 12+), logs attendance to encrypted local SQLite, and
-batch-syncs to AWS S3 automatically when connectivity is restored.
+`React Native` · `ONNX Runtime` · `100% on-device` · `Android + iOS`
+
+</div>
 
 ---
 
-## Tech Stack
+OfflineID authenticates field personnel with **face recognition + liveness detection
+entirely offline** — no internet, no cloud API. Four lightweight ONNX models run on-device
+(detect → liveness → recognise) in well under a second, attendance is logged to an encrypted
+local database, and records **sync-and-purge** to AWS S3 automatically when connectivity
+returns.
 
-| Component | Technology | Size |
-|---|---|---|
-| Face detection | SCRFD-500M (ONNX) | ~1 MB |
-| Liveness (passive) | FASNet / Silent-Face (ONNX) | ~1.2 MB |
-| Face recognition | MobileFaceNet + ArcFace INT8 (ONNX) | ~1.1 MB |
-| Inference runtime | ONNX Runtime Mobile (XNNPACK / CoreML) | ~3.5 MB |
-| Local storage | SQLite + AES-256-GCM | — |
-| Cloud sync | AWS S3 via presigned URL | — |
-| Framework | React Native 0.75 + TypeScript | — |
-| **Total model bundle add** | | **≤ 12 MB** |
+Built to drop into the existing **Datalake 3.0** React Native app as a self-contained module.
 
 ---
 
-## Quick Start (Evaluator)
+## Highlights
 
-### Android
+- **Fully offline** — recognition + liveness run on-device; zero network dependency for auth.
+- **Two-layer liveness** — passive FASNet anti-spoof **plus** a randomised active gesture
+  challenge (blink · smile · turn) to defeat photos and screen replays.
+- **Tiny footprint** — 9.1 MB total model bundle (cap: 20 MB); CPU-only, no GPU.
+- **Fast** — ~50 ms host-CPU pipeline; comfortably sub-second on mid-range ARM.
+- **Secure** — AES-256-GCM-encrypted faceprints; raw images never stored; presigned-URL sync
+  (no AWS credentials on device).
+- **Cross-platform** — RN + TypeScript UI; native ONNX engine in Kotlin (Android) and Swift (iOS).
+- **Open-source only** — MIT/Apache stack, no paid licences.
 
-```bash
-# 1. Clone and install
-git clone https://github.com/<org>/offlineid && cd offlineid
-npm install
+---
 
-# 2. Prepare models (Python 3.10+)
-cd scripts && pip install -r requirements.txt
-python export_scrfd.py && python export_mobilefacenet.py && python export_fasnet.py
-cd ..
+## Pipeline
 
-# 3. Copy models to Android assets
-cp models/*.onnx android/app/src/main/assets/
-
-# 4. Build and run
-npx react-native run-android
+```
+ Camera still
+     │
+     ▼
+ SCRFD-500M ──────────►  face box + 5 landmarks
+     │
+     ▼
+ FASNet ×2 (2.7 / 4.0) ►  passive liveness  (anti-spoof)
+     │
+     ▼
+ ML Kit gesture ───────►  active liveness  (blink / smile / turn)
+     │
+     ▼
+ ArcFace align → MobileFaceNet INT8 ►  512-d faceprint
+     │
+     ▼
+ cosine match vs enrolled  ►  attendance row (encrypted, local)
+     │
+     ▼
+ reconnect → presigned S3 PUT → local purge
 ```
 
-### iOS (requires macOS + Xcode 15)
+---
+
+## Tech stack
+
+| Layer | Technology | Size |
+|---|---|---|
+| Face detection | SCRFD-500M (ONNX) | 2.41 MB |
+| Passive liveness | MiniFASNet V2 + V1SE (ONNX) | 1.66 MB × 2 |
+| Face recognition | MobileFaceNet + ArcFace, INT8 (ONNX) | 3.35 MB |
+| Inference runtime | ONNX Runtime Mobile (CPU / XNNPACK / NNAPI / CoreML) | ~3.5 MB |
+| Active gesture | ML Kit Face Detection (VisionCamera worklet) | — |
+| Local storage | SQLite + AES-256-GCM (`@noble/ciphers`) | — |
+| Cloud sync | AWS S3 via presigned URL + NetInfo | — |
+| Framework | React Native 0.75 + TypeScript (strict) | — |
+| **Total model bundle** | | **9.1 MB** |
+
+---
+
+## Repository structure
+
+```
+.
+├── App.tsx                 # 5-tab shell (Scan · Enrol · People · Sync · System)
+├── index.js                # entry + get-random-values polyfill
+├── src/
+│   ├── screens/            # Auth, Enroll, People, Sync, Settings, About
+│   ├── components/         # CameraView, LivenessPrompt, SyncBadge
+│   ├── hooks/              # useFaceAuth orchestration state machine
+│   ├── services/           # FaceEngine bridge, Liveness, Stores, Sync
+│   ├── ui/                 # design system (theme + components)
+│   └── utils/              # crypto, cosine distance, logger
+├── android/                # native Kotlin FaceEngine + ONNX assets
+│   └── app/src/main/java/com/offlineid/FaceEngineModule.kt
+├── ios/
+│   └── FaceEngine/         # native Swift FaceEngine (1:1 Kotlin port)
+├── models/                 # ONNX models + export scripts source
+├── scripts/                # Python model export / validation
+├── submission/             # Hackathon 7.0 proposal package (zip this)
+└── docs/                   # architecture, spec, benchmarks, pipeline, findings
+```
+
+---
+
+## Quick start
+
+### Run the standalone offline app (Android)
+
+The **release** build embeds the JS bundle and runs with no Metro and no network — this is
+the real offline app (debug mode streams JS from a dev server and is not offline).
+
+```bash
+npm install
+cd android
+./gradlew assembleRelease -PreactNativeArchitectures=arm64-v8a
+cd ..
+adb install -r android/app/build/outputs/apk/release/app-arm64-v8a-release.apk
+```
+
+Then disconnect / enable airplane mode — enroll and authenticate work fully offline.
+Details + APK-size notes: [`docs/SETUP_AND_USAGE.md`](docs/SETUP_AND_USAGE.md).
+
+### Develop (hot reload)
+
+```bash
+npm install
+npm start                 # Metro dev server
+npm run android           # debug build on a connected device
+```
+
+### iOS (needs macOS + Xcode)
+
+The native Swift engine lives in [`ios/FaceEngine/`](ios/FaceEngine/) (a 1:1 port of the
+Kotlin engine — same models, same math). One-time Xcode wiring (Podfile pod, bundle
+resources, bridging header) is documented in [`ios/FaceEngine/README.md`](ios/FaceEngine/README.md).
 
 ```bash
 cd ios && pod install && cd ..
-cp models/*.onnx ios/OfflineID/
-npx react-native run-ios --simulator "iPhone 14"
+npx react-native run-ios --configuration Release
 ```
 
 ---
 
-## Demo Flow
+## Demo flow
 
-1. Open app → tap **Enroll** → scan face 3× → save
-2. Tap **Authenticate** → live camera → blink when prompted → authenticated ✓
-3. Turn on Airplane Mode → repeat auth → still works ✓
-4. Turn Airplane Mode off → watch **Sync** badge clear automatically ✓
+1. **Enrol** → scan a face 3× → encrypted faceprint stored locally.
+2. **Scan** → live camera → passive liveness + prompted gesture → **Access granted** with name + match %.
+3. Photo / screen of the person → **rejected** (anti-spoof).
+4. Enable airplane mode → authenticate again → still works; attendance queues in **Sync**.
+5. Reconnect → queue auto-syncs to S3 and local rows are purged.
 
 ---
 
-## Performance Numbers
+## Documentation
 
-| Metric | Result |
+| Doc | What's inside |
 |---|---|
-| End-to-end latency | < 200 ms |
-| LFW accuracy (MobileFaceNet INT8) | 99.53 % |
-| App size delta | ≤ 12 MB |
-| Offline capability | 100 % |
-
-See `BENCHMARKS.md` for device-specific numbers.
+| [`docs/SPEC.md`](docs/SPEC.md) | Full functional + technical specification |
+| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | System design, data flows, security model |
+| [`docs/MODEL_PIPELINE.md`](docs/MODEL_PIPELINE.md) | AI pipeline, preprocessing, export scripts |
+| [`docs/BENCHMARKS.md`](docs/BENCHMARKS.md) | Size + latency benchmarks |
+| [`docs/SETUP_AND_USAGE.md`](docs/SETUP_AND_USAGE.md) | Build, run, and demo walkthrough |
+| [`docs/ANDROID_PHONE_TESTING.md`](docs/ANDROID_PHONE_TESTING.md) | On-device testing notes |
+| [`docs/FINDINGS.md`](docs/FINDINGS.md) | Project explainer + debugging journey |
+| [`docs/PRESENTATION.md`](docs/PRESENTATION.md) | Slide deck outline |
+| [`submission/`](submission/) | Hackathon proposal package + Datalake integration guide |
 
 ---
 
-## Document Index
+## Brief compliance
 
-| File | Purpose |
+| Constraint | Status |
 |---|---|
-| `SPEC.md` | Full technical specification (start here for Claude Code) |
-| `ARCHITECTURE.md` | System architecture, data flows, security model |
-| `MODEL_PIPELINE.md` | AI model pipeline, preprocessing, export scripts |
-| `BENCHMARKS.md` | Auto-generated performance benchmark results |
-| `README.md` | This file — evaluator quick-start |
+| React Native, Android + iOS | RN ✅ · Android engine ✅ (offline APK) · iOS engine written in Swift, build wiring pending |
+| Model footprint ~20 MB | ✅ 9.1 MB |
+| < 1 s recognise + liveness | ✅ ~50 ms host CPU |
+| Android 8+ / iOS 12+, 3 GB RAM, no GPU | ✅ CPU-only ONNX Runtime |
+| > 95 % accuracy | MobileFaceNet LFW 99.5% + lighting normalisation |
+| Offline liveness (blink/smile/turn) | ✅ passive + active |
+| Sync & purge to AWS | ✅ presigned S3 + local purge |
+| Open-source only | ✅ MIT / Apache |
 
 ---
 
-## Licences
+## Licence
 
-All components are open-source (MIT / Apache 2.0). No paid licences required.
-
-- InsightFace / SCRFD / MobileFaceNet — MIT
-- Silent-Face-Anti-Spoofing (FASNet) — MIT  
-- ONNX Runtime — MIT
-- react-native-vision-camera — MIT
-- react-native-sqlite-storage — MIT
+All components are open-source (MIT / Apache 2.0), no paid licences:
+InsightFace · SCRFD · MobileFaceNet (MIT) · Silent-Face / FASNet (MIT) · ONNX Runtime (MIT) ·
+react-native-vision-camera (MIT) · react-native-sqlite-storage (MIT) · @noble/ciphers (MIT).
