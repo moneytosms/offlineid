@@ -1,18 +1,29 @@
 /**
- * VisionCamera v4 wrapper with a frame gate and green bbox overlay
- * (SPEC §6.4, ARCHITECTURE §3.1/§3.2).
+ * VisionCamera v4 wrapper: continuous ML Kit face stream + on-demand still
+ * capture (SPEC §6.4, ARCHITECTURE §3.1/§3.2).
  *
- * Renders a back-or-front `Camera` and installs a `useFrameProcessor`
- * (`react-native-worklets-core`) that forwards every {@link FRAME_GATE}th frame
- * to the JS `onFrame` callback via `runOnJS`. When a `bbox` prop is supplied a
- * green (or `overlayColor`) rectangle is drawn over the live preview to signal a
- * stable detection.
+ * Two channels, by design (see {@link ../../ANDROID_PHONE_TESTING.md}):
+ *  - **Cheap continuous stream** — a `react-native-vision-camera-face-detector`
+ *    frame processor runs every {@link FRAME_GATE}th frame and forwards mapped
+ *    {@link DetectedFace}s to `onFaces`. Drives the bbox overlay, the
+ *    presence/stability gate, and active-liveness gestures. No base64, no ONNX.
+ *  - **On-demand still** — `capture()` (exposed via ref) takes a JPEG photo and
+ *    returns it base64-encoded for the native ONNX engine. Heavy work runs once
+ *    per attempt, not per frame, keeping the recogniser within the latency
+ *    budget on mid-range devices.
  *
  * @module components/CameraView
  */
 
-import React, { useMemo } from 'react';
-import { StyleSheet, View } from 'react-native';
+import React, {
+  forwardRef,
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+} from 'react';
+import { Dimensions, StyleSheet, View } from 'react-native';
 import {
   Camera,
   useCameraDevice,
@@ -20,9 +31,19 @@ import {
   useFrameProcessor,
   type Frame,
 } from 'react-native-vision-camera';
+import {
+  useFaceDetector,
+  type Face,
+  type FrameFaceDetectionOptions,
+} from 'react-native-vision-camera-face-detector';
 import { useSharedValue, Worklets } from 'react-native-worklets-core';
+import RNFS from 'react-native-fs';
 
 import type { BoundingBox } from '../services/FaceEngine';
+import type { MLKitFaceFrame } from '../services/LivenessService';
+import { logger } from '../utils/logger';
+
+const TAG = 'CameraView';
 
 /** Process every Nth frame (SPEC §6.4). */
 export const FRAME_GATE = 5;
@@ -30,10 +51,28 @@ export const FRAME_GATE = 5;
 /** Default bbox overlay colour. */
 const DEFAULT_OVERLAY_COLOR = '#00E676';
 
+/**
+ * A face emitted to {@link CameraViewProps.onFaces}: the gesture fields the
+ * {@link MLKitFaceFrame} consumes plus the on-screen `bounds` for the overlay.
+ */
+export interface DetectedFace extends MLKitFaceFrame {
+  /** Face box in view coordinates (autoMode scales to the window). */
+  bounds: BoundingBox;
+}
+
+/** Imperative handle exposed by {@link CameraView}. */
+export interface CameraViewHandle {
+  /**
+   * Capture a still and return it base64-encoded (JPEG). Rejects if the camera
+   * is not ready.
+   */
+  capture: () => Promise<string>;
+}
+
 /** {@link CameraView} props. */
 export interface CameraViewProps {
-  /** Called with each gated (every 5th) camera frame for analysis. */
-  onFrame: (frame: Frame) => void;
+  /** Called with the mapped faces of each gated (every 5th) frame. */
+  onFaces?: (faces: DetectedFace[]) => void;
   /** Detected face box to outline; omit/null to hide the overlay. */
   bbox?: BoundingBox | null;
   /** Overlay rectangle colour (default green `#00E676`). */
@@ -44,26 +83,73 @@ export interface CameraViewProps {
   isActive?: boolean;
 }
 
+/** Map a detector {@link Face} to the {@link DetectedFace} the app consumes. */
+function mapFace(face: Face): DetectedFace {
+  'worklet';
+  return {
+    leftEyeOpenProbability: face.leftEyeOpenProbability,
+    rightEyeOpenProbability: face.rightEyeOpenProbability,
+    // ML Kit yaw → the field LivenessService gestures read.
+    headEulerAngleY: face.yawAngle,
+    smilingProbability: face.smilingProbability,
+    bounds: {
+      x: face.bounds.x,
+      y: face.bounds.y,
+      w: face.bounds.width,
+      h: face.bounds.height,
+    },
+  };
+}
+
 /**
- * Live camera preview that gates frames to `onFrame` and overlays a face box.
- *
- * Renders a permission/no-device placeholder when the camera is unavailable.
+ * Live camera preview that streams faces to `onFaces` and captures stills via
+ * the `capture()` ref. Renders a permission/no-device placeholder when the
+ * camera is unavailable.
  */
-export function CameraView({
-  onFrame,
-  bbox,
-  overlayColor = DEFAULT_OVERLAY_COLOR,
-  front = true,
-  isActive = true,
-}: CameraViewProps): React.JSX.Element {
+function CameraViewInner(
+  {
+    onFaces,
+    bbox,
+    overlayColor = DEFAULT_OVERLAY_COLOR,
+    front = true,
+    isActive = true,
+  }: CameraViewProps,
+  ref: React.Ref<CameraViewHandle>,
+): React.JSX.Element {
   const device = useCameraDevice(front ? 'front' : 'back');
-  const { hasPermission } = useCameraPermission();
+  const { hasPermission, requestPermission } = useCameraPermission();
+  const camera = useRef<Camera>(null);
 
   // Frame counter lives on the worklet thread so the gate is allocation-free.
   const frameCount = useSharedValue(0);
 
+  // Detector options must be referentially stable (the hook memoises on them).
+  const detectorOptions = useMemo<FrameFaceDetectionOptions>(
+    () => ({
+      performanceMode: 'fast',
+      classificationMode: 'all', // smiling + eyes-open probabilities (gestures)
+      contourMode: 'none',
+      landmarkMode: 'none',
+      cameraFacing: front ? 'front' : 'back',
+      autoMode: true,
+      windowWidth: Dimensions.get('window').width,
+      windowHeight: Dimensions.get('window').height,
+    }),
+    [front],
+  );
+  const { detectFaces } = useFaceDetector(detectorOptions);
+
   // `runOnJS` returns a JS-thread-callable proxy for the worklet (v1 API).
-  const onFrameJS = useMemo(() => Worklets.createRunOnJS(onFrame), [onFrame]);
+  const onFacesJS = useMemo(
+    () => Worklets.createRunOnJS(onFaces ?? (() => {})),
+    [onFaces],
+  );
+
+  useEffect(() => {
+    if (!hasPermission) {
+      void requestPermission();
+    }
+  }, [hasPermission, requestPermission]);
 
   const frameProcessor = useFrameProcessor(
     (frame: Frame) => {
@@ -71,9 +157,35 @@ export function CameraView({
       // Frame gate: forward only every Nth frame to JS (SPEC §6.4).
       frameCount.value += 1;
       if (frameCount.value % FRAME_GATE !== 0) return;
-      onFrameJS(frame);
+      const faces = detectFaces(frame);
+      onFacesJS(faces.map(mapFace));
     },
-    [onFrameJS],
+    [onFacesJS, detectFaces],
+  );
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      async capture(): Promise<string> {
+        const cam = camera.current;
+        if (cam == null) {
+          throw new Error('Camera not ready');
+        }
+        const photo = await cam.takePhoto({
+          flash: 'off',
+          enableShutterSound: false,
+        });
+        try {
+          return await RNFS.readFile(photo.path, 'base64');
+        } finally {
+          // Best-effort cleanup; a leaked temp file must not fail the capture.
+          void RNFS.unlink(photo.path).catch((err) =>
+            logger.debug(TAG, 'temp photo unlink failed', err),
+          );
+        }
+      },
+    }),
+    [],
   );
 
   const overlayStyle = useMemo(
@@ -105,9 +217,11 @@ export function CameraView({
   return (
     <View style={styles.fill}>
       <Camera
+        ref={camera}
         style={StyleSheet.absoluteFill}
         device={device}
         isActive={isActive}
+        photo={true}
         frameProcessor={frameProcessor}
         accessibilityLabel="Camera preview"
       />
@@ -122,6 +236,12 @@ export function CameraView({
     </View>
   );
 }
+
+/**
+ * Live camera preview. Forward a {@link CameraViewHandle} ref to call
+ * `capture()` for an on-demand base64 still.
+ */
+export const CameraView = forwardRef(CameraViewInner);
 
 const styles = StyleSheet.create({
   fill: { flex: 1 },

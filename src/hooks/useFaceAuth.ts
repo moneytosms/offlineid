@@ -6,9 +6,11 @@
  *   IDLE → DETECTING → LIVENESS → GESTURE → RECOGNISING → SUCCESS | FAIL
  *
  * Frame handling (SPEC §6.4):
- *  - {@link processFrame} is gated to every 5th call.
- *  - A face must be detected on 3 consecutive sampled frames to "lock in",
- *    after which the full liveness → gesture → recognition pipeline runs once.
+ *  - {@link processDetection} consumes the gated ML Kit face stream
+ *    (already sampled every 5th frame in `CameraView`).
+ *  - A face must be present on 3 consecutive sampled frames to "lock in"; the
+ *    hook then captures one still (`capture()`) and runs the full
+ *    detect → liveness → gesture → recognition pipeline once on that still.
  *
  * Recognition thresholds (SPEC §11):
  *  - score > 0.65            → SUCCESS, write `attendance_log`.
@@ -24,13 +26,17 @@
 import { useCallback, useRef, useState } from 'react';
 
 import { FaceEngine } from '../services/FaceEngine';
-import type { BoundingBox, DetectionResult } from '../services/FaceEngine';
+import type { BoundingBox } from '../services/FaceEngine';
 import {
   passiveLivenessCheck,
   activeGestureCheck,
   pickRandomGesture,
 } from '../services/LivenessService';
-import type { Gesture, FaceDetectorStream } from '../services/LivenessService';
+import type {
+  Gesture,
+  FaceDetectorStream,
+  MLKitFaceFrame,
+} from '../services/LivenessService';
 import { EmbeddingStore } from '../services/EmbeddingStore';
 import { findBestMatch } from '../utils/cosineDistance';
 import { AttendanceStore } from '../services/AttendanceStore';
@@ -78,10 +84,12 @@ export interface MatchedEmployee {
   score: number;
 }
 
-/** Inputs for a single processed frame. */
-export interface FrameInput {
-  /** Base64-encoded camera frame. */
-  base64Frame: string;
+/** Inputs for a single processed detection. */
+export interface DetectionInput {
+  /** Current ML Kit face for this sampled frame, or null if none present. */
+  face: MLKitFaceFrame | null;
+  /** Capture a base64 still on lock-in (e.g. `CameraView.capture`). */
+  capture: () => Promise<string>;
   /** ML Kit face-frame stream used for the gesture step. */
   faceDetectorStream: FaceDetectorStream;
   /** Device identifier for the attendance record. */
@@ -104,8 +112,8 @@ export interface UseFaceAuth {
   livenessScore: number | null;
   /** The gesture currently prompted, or null. */
   currentGesture: Gesture | null;
-  /** Feed a camera frame (gated to every 5th internally). */
-  processFrame: (input: FrameInput) => Promise<void>;
+  /** Feed one sampled ML Kit detection; captures + runs pipeline on lock-in. */
+  processDetection: (input: DetectionInput) => Promise<void>;
   /** Begin a session (IDLE → DETECTING). No-op while LOCKED. */
   startSession: () => void;
   /** Reset to IDLE and clear per-session counters (not the lockout). */
@@ -124,7 +132,6 @@ export function useFaceAuth(): UseFaceAuth {
   const [currentGesture, setCurrentGesture] = useState<Gesture | null>(null);
 
   // Refs (mutable, not render-driving).
-  const frameCounter = useRef(0);
   const stableCount = useRef(0);
   const busy = useRef(false); // pipeline in flight — drop incoming frames
   const uncertainRetries = useRef(0);
@@ -143,7 +150,6 @@ export function useFaceAuth(): UseFaceAuth {
       setPhase('LOCKED');
       return;
     }
-    frameCounter.current = 0;
     stableCount.current = 0;
     busy.current = false;
     uncertainRetries.current = 0;
@@ -154,7 +160,6 @@ export function useFaceAuth(): UseFaceAuth {
   }, [setPhase]);
 
   const resetSession = useCallback((): void => {
-    frameCounter.current = 0;
     stableCount.current = 0;
     busy.current = false;
     uncertainRetries.current = 0;
@@ -179,7 +184,7 @@ export function useFaceAuth(): UseFaceAuth {
 
   /** Write a failed-attempt audit row (SPEC §11). */
   const logFailedAttempt = useCallback(
-    async (input: FrameInput, liveness: number | null): Promise<void> => {
+    async (input: DetectionInput, liveness: number | null): Promise<void> => {
       try {
         await AttendanceStore.logEvent({
           employee_id: 'unknown',
@@ -204,13 +209,14 @@ export function useFaceAuth(): UseFaceAuth {
    */
   const runPipeline = useCallback(
     async (
-      input: FrameInput,
+      input: DetectionInput,
+      base64Frame: string,
       bbox: BoundingBox,
       landmarks: [number, number][],
     ): Promise<void> => {
       // --- Passive liveness (SPEC §9.1) ---
       setPhase('LIVENESS');
-      const passive = await passiveLivenessCheck(input.base64Frame, bbox);
+      const passive = await passiveLivenessCheck(base64Frame, bbox);
       setLivenessScore(passive.score);
       if (!passive.isLive) {
         logger.info(TAG, 'liveness reject');
@@ -237,7 +243,7 @@ export function useFaceAuth(): UseFaceAuth {
       // --- Recognition (SPEC §11) ---
       setPhase('RECOGNISING');
       const { embedding } = await FaceEngine.getEmbedding(
-        input.base64Frame,
+        base64Frame,
         landmarks,
       );
       const query = Float32Array.from(embedding);
@@ -292,8 +298,8 @@ export function useFaceAuth(): UseFaceAuth {
     [logFailedAttempt, registerFail, setPhase],
   );
 
-  const processFrame = useCallback(
-    async (input: FrameInput): Promise<void> => {
+  const processDetection = useCallback(
+    async (input: DetectionInput): Promise<void> => {
       // Lockout gate (SPEC §12).
       if (Date.now() < lockUntil.current) {
         if (statusRef.current !== 'LOCKED') setPhase('LOCKED');
@@ -303,31 +309,35 @@ export function useFaceAuth(): UseFaceAuth {
       // Only act while actively detecting; ignore frames mid-pipeline / terminal.
       if (statusRef.current !== 'DETECTING' || busy.current) return;
 
-      // Frame gate: every 5th frame (SPEC §6.4).
-      frameCounter.current += 1;
-      if (frameCounter.current % FRAME_GATE !== 0) return;
-
-      let detection: DetectionResult;
-      try {
-        detection = await FaceEngine.detectFace(input.base64Frame);
-      } catch (err) {
-        logger.error(TAG, 'detectFace failed', err);
-        return;
-      }
-
-      if (!detection.found || !detection.bbox || !detection.landmarks) {
+      // The ML Kit stream is already gated to every 5th frame in CameraView.
+      // Require a face present on STABLE_LOCK_COUNT consecutive samples.
+      if (input.face == null) {
         stableCount.current = 0;
         return;
       }
-
-      // Require STABLE_LOCK_COUNT consecutive stable detections.
       stableCount.current += 1;
       if (stableCount.current < STABLE_LOCK_COUNT) return;
 
-      // Lock in and run the full pipeline exactly once.
+      // Lock in: capture one still, then run the full ONNX pipeline once.
       busy.current = true;
       try {
-        await runPipeline(input, detection.bbox, detection.landmarks);
+        const base64Frame = await input.capture();
+
+        // Native SCRFD gives the precise bbox + 5 landmarks on the still.
+        const detection = await FaceEngine.detectFace(base64Frame);
+        if (!detection.found || !detection.bbox || !detection.landmarks) {
+          // Face lost between stream and still — re-arm without penalty.
+          logger.debug(TAG, 'no face on captured still; re-arming');
+          stableCount.current = 0;
+          return;
+        }
+
+        await runPipeline(
+          input,
+          base64Frame,
+          detection.bbox,
+          detection.landmarks,
+        );
       } catch (err) {
         logger.error(TAG, 'pipeline error', err);
         await logFailedAttempt(input, null);
@@ -344,7 +354,7 @@ export function useFaceAuth(): UseFaceAuth {
     matchedEmployee,
     livenessScore,
     currentGesture,
-    processFrame,
+    processDetection,
     startSession,
     resetSession,
   };

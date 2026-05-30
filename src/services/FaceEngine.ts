@@ -66,14 +66,28 @@ export interface IFaceEngineNative {
     /** Crop scale (2.7 or 4.0) — selects the matching FASNet model natively. */
     scale: number,
   ): Promise<LivenessResult>;
+  /**
+   * Landmarks are marshalled as a JSON string (`[[x,y], ...]`). The native
+   * module (Kotlin `getEmbedding(base64, landmarksJson)` / Swift equivalent)
+   * parses the JSON — passing a raw JS array would fail bridge type coercion.
+   */
   getEmbedding(
     base64Frame: string,
-    landmarks: [number, number][],
+    landmarksJson: string,
   ): Promise<EmbeddingResult>;
   /** Load all ONNX models. Call once at app start. */
   initModels(): Promise<void>;
   /** Free model memory. Call on cleanup / background. */
   releaseModels(): Promise<void>;
+}
+
+/** Public {@link FaceEngine} surface — same as native but with typed landmarks. */
+export interface IFaceEngine
+  extends Omit<IFaceEngineNative, 'getEmbedding'> {
+  getEmbedding(
+    base64Frame: string,
+    landmarks: [number, number][],
+  ): Promise<EmbeddingResult>;
 }
 
 const nativeModule: IFaceEngineNative | undefined = (
@@ -102,7 +116,7 @@ function requireNative(): IFaceEngineNative {
  *
  * All methods are async and reject with the native error on failure.
  */
-export const FaceEngine: IFaceEngineNative = {
+export const FaceEngine: IFaceEngine = {
   detectFace(base64Frame: string): Promise<DetectionResult> {
     return requireNative().detectFace(base64Frame);
   },
@@ -119,7 +133,8 @@ export const FaceEngine: IFaceEngineNative = {
     base64Frame: string,
     landmarks: [number, number][],
   ): Promise<EmbeddingResult> {
-    return requireNative().getEmbedding(base64Frame, landmarks);
+    // Native expects a JSON string (see IFaceEngineNative.getEmbedding).
+    return requireNative().getEmbedding(base64Frame, JSON.stringify(landmarks));
   },
 
   async initModels(): Promise<void> {
