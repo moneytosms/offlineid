@@ -1,8 +1,8 @@
-# SPEC.md — OfflineID: Offline Facial Recognition & Liveness Detection
-## Hackathon 7.0 — Datalake 3.0 Integration Module
+# SPEC.md - OfflineID: Offline Facial Recognition & Liveness Detection
+## Hackathon 7.0 - Datalake 3.0 Integration Module
 
 > Every section is precise and self-contained, so an engineer can act
-> on it directly — no ambiguity, no implied knowledge. Read `ARCHITECTURE.md` and
+> on it directly - no ambiguity, no implied knowledge. Read `ARCHITECTURE.md` and
 > `MODEL_PIPELINE.md` alongside this file before touching any code.
 
 ---
@@ -14,13 +14,13 @@
 | Hackathon | Hackathon 7.0 |
 | Submission opens | 22 May 2026 |
 | Submission closes | 05 June 2026 |
-| Platform | React Native (CLI — **not** Expo Go) |
+| Platform | React Native (CLI - **not** Expo Go) |
 | Target OS | Android 8.0+ · iOS 12+ |
 | Min RAM | 3 GB |
 | Max model bundle size | 20 MB (target ≤ 12 MB) |
 | Inference latency target | < 1 second end-to-end |
 | Recognition accuracy | > 95 % |
-| Network dependency | **Zero** — fully offline |
+| Network dependency | **Zero** - fully offline |
 | Cloud sync | AWS S3 via presigned URL on reconnect |
 | Primary language | TypeScript + Kotlin (Android) + Swift (iOS) |
 | License constraint | Open-source only, no paid licences |
@@ -117,11 +117,11 @@ offlineid/
 
 ## 4. AI Model Stack
 
-### 4.1 Model 1 — Face Detector: SCRFD-500M
+### 4.1 Model 1 - Face Detector: SCRFD-500M
 
 | Property | Value |
 |---|---|
-| Source | InsightFace — `insightface/detection/scrfd` |
+| Source | InsightFace - `insightface/detection/scrfd` |
 | ONNX file | `scrfd_500m_fixed.onnx` |
 | Input | `1 × 3 × 640 × 640` (or dynamic shape), RGB, normalised |
 | Output | bounding boxes + 5 facial keypoints (landmarks) |
@@ -138,12 +138,12 @@ right mouth corner) required for ArcFace alignment in a single forward pass.
 ```python
 # Already available as ONNX from InsightFace model zoo
 # Download: https://github.com/deepinsight/insightface model zoo
-# File: buffalo_sc/det_500m.onnx  — rename to scrfd_500m_fixed.onnx
+# File: buffalo_sc/det_500m.onnx  - rename to scrfd_500m_fixed.onnx
 ```
 
 ---
 
-### 4.2 Model 2 — Face Recogniser: MobileFaceNet + ArcFace
+### 4.2 Model 2 - Face Recogniser: MobileFaceNet + ArcFace
 
 | Property | Value |
 |---|---|
@@ -168,7 +168,7 @@ quantize_dynamic(
 )
 ```
 
-**Face alignment — ArcFace 5-point similarity transform (critical preprocessing):**
+**Face alignment, ArcFace 5-point similarity transform (critical preprocessing):**
 ```python
 # Reference landmark destinations in 112×112 space
 ARCFACE_DST = np.array([
@@ -184,14 +184,14 @@ This alignment MUST be replicated in the native module. See `MODEL_PIPELINE.md �
 
 ---
 
-### 4.3 Model 3 — Liveness / Anti-Spoof: FASNet (Silent-Face)
+### 4.3 Model 3 - Liveness / Anti-Spoof: FASNet (Silent-Face)
 
 | Property | Value |
 |---|---|
 | Source | `minivision-ai/Silent-Face-Anti-Spoofing` |
 | ONNX file | `fasnet_anti_spoof.onnx` |
 | Input | Two crops at scales 2.7 and 4.0 of the face bounding box |
-| Output | `[real_score, fake_score]` — take softmax, threshold real_score > 0.6 |
+| Output | `[real_score, fake_score]` - take softmax, threshold real_score > 0.6 |
 | Size | ~1.2 MB (MiniFASNet-v2) |
 | Inference time | ~20 ms per scale call |
 | License | MIT |
@@ -202,7 +202,7 @@ This alignment MUST be replicated in the native module. See `MODEL_PIPELINE.md �
 - Basic 2D mask attacks
 
 **Active liveness (gesture, layered on top):**
-- Blink detection (eye aspect ratio via ML Kit landmarks — on-device, free)
+- Blink detection (eye aspect ratio via ML Kit landmarks, on-device, free)
 - Head turn (left/right) via yaw angle from ML Kit
 - Smile prompt (mouth aspect ratio via ML Kit)
 
@@ -344,9 +344,9 @@ val session = env.createSession(modelBytes, opts)
 ```
 
 **ONNX Runtime execution providers (Android priority order):**
-1. NNAPI (Android Neural Networks API) — on devices with DSP/NPU
-2. XNNPACK (optimised ARM CPU kernels) — fallback
-3. CPU (plain OrtCPU) — last resort
+1. NNAPI (Android Neural Networks API), on devices with DSP/NPU
+2. XNNPACK (optimised ARM CPU kernels), fallback
+3. CPU (plain OrtCPU), last resort
 
 ### 6.3 iOS Native Module (Swift)
 
@@ -518,7 +518,7 @@ async function passiveLivenessCheck(
 ### 9.2 Active Liveness (Gesture)
 
 ```typescript
-// Gesture prompts — randomly select one per session
+// Gesture prompts, randomly select one per session
 const GESTURES = ['BLINK', 'TURN_LEFT', 'TURN_RIGHT', 'SMILE'] as const;
 
 // Detection via Google ML Kit Face Detection (on-device, offline-capable)
@@ -788,7 +788,7 @@ npm run test:e2e               # Detox E2E (requires device/emulator)
 |---|---|
 | ONNX Runtime RN v1.20 may have uint8 tensor issues on iOS | Pin to 1.18.0; use float32 for iOS tensors |
 | VisionCamera v4 frame processor pixel format mismatch | Request `yuv` format on Android, `native` on iOS; convert in native module |
-| FASNet model original is PyTorch — ONNX export may need opset patching | Use `torch.onnx.export(..., opset_version=11)` |
+| FASNet model original is PyTorch - ONNX export may need opset patching | Use `torch.onnx.export(..., opset_version=11)` |
 | ArcFace alignment implemented in native (no OpenCV on device) | Implement similarity transform manually in Kotlin/Swift (2×3 matrix) |
 | SQLite encryption overhead | Encrypt only the embedding BLOB, not entire DB |
 | Presigned URL expiry during large batch sync | Request URLs in batches of 10, not 50; refresh if 403 received |
@@ -803,7 +803,7 @@ npm run test:e2e               # Detox E2E (requires device/emulator)
 | `src/native/android/FaceEngineModule.kt` | Kotlin | P0 | ONNX RT AAR |
 | `src/native/ios/FaceEngineModule.swift` | Swift | P0 | ONNX RT pod |
 | `src/services/FaceEngine.ts` | TypeScript | P0 | Native modules |
-| `src/db/schema.ts` | TypeScript | P0 | — |
+| `src/db/schema.ts` | TypeScript | P0 | - |
 | `src/services/EmbeddingStore.ts` | TypeScript | P0 | schema.ts |
 | `src/services/AttendanceStore.ts` | TypeScript | P0 | schema.ts |
 | `src/services/LivenessService.ts` | TypeScript | P1 | FaceEngine.ts |
@@ -813,8 +813,8 @@ npm run test:e2e               # Detox E2E (requires device/emulator)
 | `src/services/SyncService.ts` | TypeScript | P2 | AttendanceStore.ts |
 | `src/hooks/useNetworkSync.ts` | TypeScript | P2 | SyncService.ts |
 | `src/screens/SyncStatusScreen.tsx` | TypeScript/React | P2 | SyncService.ts |
-| `src/utils/imageUtils.ts` | TypeScript | P0 | — |
-| `src/utils/cosineDistance.ts` | TypeScript | P0 | — |
+| `src/utils/imageUtils.ts` | TypeScript | P0 | - |
+| `src/utils/cosineDistance.ts` | TypeScript | P0 | - |
 | `src/utils/crypto.ts` | TypeScript | P0 | encrypted-storage |
 
 ---

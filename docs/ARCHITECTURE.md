@@ -1,4 +1,4 @@
-# ARCHITECTURE.md — System Architecture
+# ARCHITECTURE.md - System Architecture
 ## OfflineID · Hackathon 7.0
 
 > Read alongside `SPEC.md` and `MODEL_PIPELINE.md`.
@@ -51,7 +51,7 @@
 
 ## 2. Native Module Architecture
 
-### 2.1 Android (Kotlin) — FaceEngineModule
+### 2.1 Android (Kotlin) - FaceEngineModule
 
 ```
 android/app/src/main/
@@ -67,7 +67,7 @@ android/app/src/main/
 **Threading model:**
 - All ONNX inference runs on a dedicated `HandlerThread` named `OrtInference`
 - Results are marshalled back to JS via `Promise` resolve/reject
-- OrtEnvironment and OrtSession are singletons — created once in `initModels()`
+- OrtEnvironment and OrtSession are singletons, created once in `initModels()`
 - Each inference call gets its own `OrtSession.run()` invocation (thread-safe)
 
 **NNAPI execution provider:**
@@ -76,12 +76,12 @@ val opts = OrtSession.SessionOptions()
 try {
     opts.addNnapi()  // only available on Android 8.1+
 } catch (e: OrtException) {
-    // NNAPI not available — silently fall back to CPU
+    // NNAPI not available, silently fall back to CPU
 }
 opts.addXnnpack(mapOf())  // always add XNNPACK as CPU accelerator
 ```
 
-### 2.2 iOS (Swift) — FaceEngineModule
+### 2.2 iOS (Swift) - FaceEngineModule
 
 ```
 ios/OfflineID/

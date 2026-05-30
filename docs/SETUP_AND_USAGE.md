@@ -76,13 +76,19 @@ The 4 final ONNX files are already in `android/app/src/main/assets/`. Run this s
 to rebuild them from source. The large source models (`buffalo_sc.zip`, FP32 weights) are
 gitignored.
 
-### 3.1 Python env
+### 3.1 Python env (uv)
+
+Python deps are managed with [uv](https://github.com/astral-sh/uv)
+(`winget install astral-sh.uv`, or `scoop install uv`).
 
 ```powershell
-python -m venv .venv
-.\.venv\Scripts\pip install torch==2.3.0 --index-url https://download.pytorch.org/whl/cpu
-.\.venv\Scripts\pip install onnx==1.16.0 onnxruntime==1.18.0 onnx-simplifier==0.4.35 numpy==1.26.0
+uv venv
+uv pip install torch==2.3.0 --index-url https://download.pytorch.org/whl/cpu
+uv pip install -r scripts\requirements.txt
 ```
+
+Or let the script do it: `uv run scripts/install_deps.py` (falls back to venv + pip with
+`--no-uv`).
 
 ### 3.2 Acquire source models
 
