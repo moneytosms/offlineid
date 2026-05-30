@@ -8,3 +8,5 @@ opencv-python==4.10.0
 numpy==1.26.0
 scikit-image==0.23.0
 python-pptx==1.0.2
+markdown==3.7
+xhtml2pdf==0.2.16
