@@ -12,10 +12,10 @@
  *    hook then captures one still (`capture()`) and runs the full
  *    detect → liveness → gesture → recognition pipeline once on that still.
  *
- * Recognition thresholds (SPEC §11):
- *  - score > 0.65            → SUCCESS, write `attendance_log`.
- *  - 0.45 ≤ score ≤ 0.65     → UNCERTAIN, retry (max 3).
- *  - score < 0.45 | liveness → REJECTED.
+ * Recognition thresholds (SPEC §11, on-device calibrated):
+ *  - score > 0.40            → SUCCESS, write `attendance_log`.
+ *  - 0.25 ≤ score ≤ 0.40     → UNCERTAIN, retry (max 3).
+ *  - score < 0.25 | liveness → REJECTED.
  *
  * Rate limiting (SPEC §12): after 5 consecutive failed sessions the screen is
  * locked for 30 s.
@@ -62,11 +62,16 @@ export const FRAME_GATE = 5;
 /** Consecutive stable detections before locking in (SPEC §6.4). */
 export const STABLE_LOCK_COUNT = 3;
 
-/** Recognition match threshold (SPEC §11). */
-export const MATCH_THRESHOLD = 0.65;
+/**
+ * Recognition match threshold (SPEC §11). Calibrated against on-device
+ * MobileFaceNet-INT8 readings: genuine matches cluster ~0.45–0.55 on real
+ * faces, impostors ~0.0–0.3, so 0.40 accepts genuine users with a wide
+ * impostor margin. (Pre-calibration default was 0.65, unreachable on-device.)
+ */
+export const MATCH_THRESHOLD = 0.4;
 
 /** Lower bound of the "uncertain" band (SPEC §11). */
-export const UNCERTAIN_THRESHOLD = 0.45;
+export const UNCERTAIN_THRESHOLD = 0.25;
 
 /** Max uncertain retries within a session (SPEC §11). */
 export const MAX_UNCERTAIN_RETRIES = 3;

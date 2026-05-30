@@ -35,8 +35,12 @@ export const GESTURE_THRESHOLDS = {
   EYE_OPEN_CLOSED: 0.2,
   /** `headEulerAngleY` magnitude (deg) for a confirmed head turn. */
   YAW_DEGREES: 20,
-  /** Smiling probability above this counts as a smile. */
-  SMILE: 0.7,
+  /**
+   * Smiling probability above this counts as a smile. Lowered from 0.7:
+   * facial hair occludes mouth corners so ML Kit `smilingProbability` reads
+   * low on bearded subjects, causing spurious SMILE-gesture rejects.
+   */
+  SMILE: 0.55,
 } as const;
 
 /** Supported active-liveness gestures (SPEC §9.2). */

@@ -42,7 +42,14 @@ describe('findBestMatch', () => {
     expect(findBestMatch(query, onlyLow, 0.65)).toBeNull();
   });
 
-  it('defaults threshold to 0.65', () => {
-    expect(findBestMatch(query, [{ employeeId: 'mid', embedding: new Float32Array([0.6, 0.8, 0]) }])).toBeNull();
+  it('defaults threshold to 0.40', () => {
+    // score 0.6 ≥ default 0.40 → matches.
+    expect(
+      findBestMatch(query, [{ employeeId: 'mid', embedding: new Float32Array([0.6, 0.8, 0]) }]),
+    ).not.toBeNull();
+    // score 0.3 < default 0.40 → no match.
+    expect(
+      findBestMatch(query, [{ employeeId: 'dim', embedding: new Float32Array([0.3, 0.954, 0]) }]),
+    ).toBeNull();
   });
 });

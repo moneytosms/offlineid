@@ -15,7 +15,7 @@ export interface MatchResult {
 /**
  * Compute cosine similarity between two L2-normalised embeddings.
  * Both vectors must already be L2-normalised (norm = 1.0).
- * Returns value in [-1, 1]; threshold: > 0.65 = match.
+ * Returns value in [-1, 1]; threshold: > 0.40 = match (on-device calibrated).
  *
  * @param a - First L2-normalised embedding.
  * @param b - Second L2-normalised embedding.
@@ -35,13 +35,13 @@ export function cosineSimilarity(a: Float32Array, b: Float32Array): number {
  *
  * @param queryEmbedding - The probe embedding to match.
  * @param enrolled - Candidate enrolled embeddings.
- * @param threshold - Minimum cosine similarity to accept (default 0.65).
+ * @param threshold - Minimum cosine similarity to accept (default 0.40).
  * @returns Best match above threshold, or null.
  */
 export function findBestMatch(
   queryEmbedding: Float32Array,
   enrolled: EnrolledEmbedding[],
-  threshold = 0.65,
+  threshold = 0.4,
 ): MatchResult | null {
   let bestScore = -Infinity;
   let bestId: string | null = null;
