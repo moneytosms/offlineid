@@ -57,9 +57,4 @@ on-device in about 51 ms on a host CPU.
 
 ---
 
-## Submitting
-
-- **Upload proposal (.zip, max 25 MB):** zip this `submission/` folder.
-- **Link for the proposal:** the GitHub Release above (source + APK + demo video).
-
 Full instructions and the checklist are in `README.md`.
