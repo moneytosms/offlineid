@@ -19,17 +19,18 @@ field (your GitHub repo / Google Drive).
 | `01-PROPOSAL.md` | Solution overview: problem → approach → why it wins | Presentation |
 | `02-DATALAKE-3.0-INTEGRATION.md` | **Exact steps to drop OfflineID into Datalake 3.0** | Feasibility / Integration steps |
 | `03-BUILD-OFFLINE-APK.md` | Build the standalone **offline** release APK (not debug/Metro) | Working Prototype |
-| `PRESENTATION.md` | 20-slide deck outline → export to PPTX/PDF | **Presentation (mandatory)** |
+| `OfflineID_Hackathon7.pptx` | **Ready-to-present 16-slide deck** (themed) | **Presentation (mandatory)** |
+| `PRESENTATION.md` | Slide outline / speaker notes behind the deck | Presentation |
 | `docs/ARCHITECTURE.md` | System + data-flow architecture | Technical Documentation |
 | `docs/MODEL_PIPELINE.md` | AI pipeline + model details | Technical Documentation |
 | `docs/BENCHMARKS.md` | Size + latency benchmarks | Performance benchmarks |
 | `docs/SPEC.md` | Full functional/technical spec | Technical Documentation |
 | `docs/SETUP_AND_USAGE.md` | Build + run + demo walkthrough | Technical Documentation |
 
-> The **PPTX/PDF presentation is a mandatory deliverable.** `PRESENTATION.md` is a
-> speaker-ready outline — convert it to a real `.pptx` (PowerPoint / Google Slides /
-> Canva) before submitting. A markdown file alone does not satisfy "well presented in
-> pptx/pdf".
+> The **PPTX presentation is a mandatory deliverable** and is already built:
+> `OfflineID_Hackathon7.pptx` (16 themed slides). Regenerate any time with
+> `.venv/Scripts/python.exe scripts/build_pptx.py`. Open it once in PowerPoint/Google
+> Slides to add your team names (slide 1) and tweak as you like.
 
 ---
 
@@ -71,7 +72,7 @@ Name · Email (+verify) · Mobile · Team Leader name · Team Size · Captcha �
 
 ## Submission checklist
 
-- [ ] `PRESENTATION.md` exported to **PPTX or PDF** and placed in this folder
+- [x] Themed **PPTX** built: `OfflineID_Hackathon7.pptx` (add team names on slide 1)
 - [ ] Demo video recorded + link added (in `01-PROPOSAL.md` and the form link)
 - [ ] Full source pushed to a **public** GitHub repo (open-source only — no paid licences)
 - [ ] **Release** (offline) APK built and attached to repo Release — see `03-BUILD-OFFLINE-APK.md`
