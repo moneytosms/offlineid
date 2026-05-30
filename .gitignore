@@ -2,6 +2,10 @@
 #
 .DS_Store
 
+# OfflineID build artifacts (ship the APK via the GitHub Release / link, not git)
+OfflineID-release.apk
+release-build*.log
+
 # Xcode
 #
 build/
