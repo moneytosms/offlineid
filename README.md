@@ -105,27 +105,38 @@ Built to drop into the existing **Datalake 3.0** React Native app as a self-cont
 
 ## Dependencies
 
-Two scripts manage every dependency, so you can provision or fully clean a machine.
+Python tooling is managed with **[uv](https://github.com/astral-sh/uv)**; JavaScript with
+npm. Two scripts wrap both so you can provision or fully clean a machine.
 
 ```bash
-# install: python venv (model-export tooling) + npm packages
-python scripts/install_deps.py
+# 1. install uv once
+#    Windows:      winget install astral-sh.uv      (or: scoop install uv)
+#    macOS/Linux:  curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# 2. install everything for development (uv-managed .venv + npm packages)
+uv run scripts/install_deps.py
 
 # also install the system toolchain (JDK 17, Python 3.12, Node LTS, Android SDK)
-python scripts/install_deps.py --with-toolchain
+uv run scripts/install_deps.py --with-toolchain
 
 # uninstall: preview a complete removal, then do it
-python scripts/uninstall_deps.py --full --dry-run
-python scripts/uninstall_deps.py --full
+uv run scripts/uninstall_deps.py --full --dry-run
+uv run scripts/uninstall_deps.py --full
 ```
 
-`install_deps.py` uses [uv](https://github.com/astral-sh/uv) when available (falling back to
-venv + pip) and pins Torch to the CPU wheel. `uninstall_deps.py` removes local build dirs,
-user caches, the Android SDK, and the scoop/winget toolchains. Full flag list:
-[scripts/README.md](scripts/README.md).
+`install_deps.py` builds the `.venv` with `uv` (Torch pinned to the CPU wheel) and runs
+`npm install`. Prefer doing the Python side by hand?
+
+```bash
+uv venv
+uv pip install -r scripts/requirements.txt
+```
+
+`uninstall_deps.py` removes local build dirs, user caches, the Android SDK, and the
+scoop/winget toolchains. Full flag list: [scripts/README.md](scripts/README.md).
 
 > Day to day you only need `npm install` (JS); the 4 ONNX models are already in the repo.
-> The toolchain flags are for setting up or tearing down a fresh machine.
+> No uv? The scripts fall back to `python -m venv` + `pip` (`python scripts/install_deps.py --no-uv`).
 
 ---
 

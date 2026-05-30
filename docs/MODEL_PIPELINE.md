@@ -1,4 +1,4 @@
-# MODEL_PIPELINE.md — AI Model Pipeline & Preprocessing
+# MODEL_PIPELINE.md - AI Model Pipeline & Preprocessing
 ## OfflineID · Hackathon 7.0
 
 > This document is the ground truth for all AI model operations.
@@ -9,7 +9,7 @@
 
 ## 1. Model Acquisition
 
-### Step 1a — SCRFD-500M Face Detector
+### Step 1a - SCRFD-500M Face Detector
 
 ```bash
 # Option A: Download directly from InsightFace model zoo
@@ -28,14 +28,14 @@ cp ~/.insightface/models/buffalo_sc/det_500m.onnx ../models/scrfd_500m_fixed.onn
 # https://github.com/deepinsight/insightface/releases → model zoo
 ```
 
-### Step 1b — MobileFaceNet Recogniser
+### Step 1b - MobileFaceNet Recogniser
 
 ```bash
 # buffalo_sc pack contains w600k_mbf.onnx (MobileFaceNet trained on WebFace600K with ArcFace)
 cp ~/.insightface/models/buffalo_sc/w600k_mbf.onnx ../models/mobilefacenet_fp32.onnx
 ```
 
-### Step 1c — FASNet Liveness Model
+### Step 1c - FASNet Liveness Model
 
 ```bash
 git clone https://github.com/minivision-ai/Silent-Face-Anti-Spoofing
@@ -124,7 +124,7 @@ assert cos_sim > 0.99, "INT8 quantisation degraded accuracy too much!"
 """
 Export FASNet (MiniFASNetV2) from PyTorch .pth to ONNX.
 Two models needed: scale 2.7 (80×80 input) and scale 4.0 (80×80 input).
-Both have identical architecture — only the training data/scale differs.
+Both have identical architecture, only the training data/scale differs.
 """
 import torch
 import sys
@@ -169,7 +169,7 @@ export_fasnet(
 ## 3. Preprocessing Pipeline (Native Implementation Required)
 
 This section defines the EXACT preprocessing every native module (Kotlin/Swift) MUST implement.
-The order of operations is critical — deviating will degrade accuracy.
+The order of operations is critical, deviating will degrade accuracy.
 
 ### 3.1 SCRFD Face Detector Preprocessing
 
@@ -238,7 +238,7 @@ val ARCFACE_DST = arrayOf(
  * Uses least-squares fitting. Reference: skimage.transform.SimilarityTransform
  */
 fun estimateNorm(landmarks: Array<FloatArray>): FloatArray {
-    // landmarks: shape [5,2] — output of SCRFD
+    // landmarks: shape [5,2], output of SCRFD
     // Returns: 2×3 affine matrix as FloatArray of length 6
     // Implementation: fit similarity transform via SVD
     // See: https://github.com/deepinsight/insightface/blob/master/python-package/insightface/utils/face_align.py
@@ -294,7 +294,7 @@ fun warpAffine(srcBitmap: Bitmap, M: FloatArray, outSize: Int): Bitmap {
 ```
 
 > **Note:** Implement `solveLeastSquares` using Gaussian elimination
-> or use the Apache Commons Math library. Do NOT use OpenCV — it is not bundled with
+> or use the Apache Commons Math library. Do NOT use OpenCV - it is not bundled with
 > the React Native project and adds ~40 MB. The above manual implementation is sufficient
 > for a 5-point system.
 
@@ -557,7 +557,7 @@ for name, (path, shape) in MODELS.items():
 
 # Write BENCHMARKS.md
 with open("../BENCHMARKS.md", "w") as f:
-    f.write("# BENCHMARKS.md — Model Performance\n\n")
+    f.write("# BENCHMARKS.md, Model Performance\n\n")
     f.write("| Model | Size (MB) | Avg Latency (ms) | P95 Latency (ms) |\n")
     f.write("|---|---|---|---|\n")
     for name, size, avg, p95 in results:

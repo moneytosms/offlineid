@@ -1,4 +1,4 @@
-# FINDINGS — OfflineID, explained from zero
+# FINDINGS - OfflineID, explained from zero
 
 A complete walkthrough of this project for someone who has never seen it: what
 it is, how it is built, every major technology and *why* it was chosen, and the
@@ -29,7 +29,7 @@ Hard requirements from the brief:
 | Anti-spoof | basic offline liveness (blink/smile/turn) to beat photos/screens |
 
 The word that drives every decision is **offline**. The phone must run the AI
-itself — no server round-trip. That single constraint explains the whole
+itself, no server round-trip. That single constraint explains the whole
 architecture below.
 
 ---
@@ -38,15 +38,15 @@ architecture below.
 
 Three screens (tabs):
 
-1. **Enroll** — register a person. Operator types ID + name, then the camera
+1. **Enroll**, register a person. Operator types ID + name, then the camera
    takes **3 photos** (front / slight-left / slight-right). Each photo is turned
    into a 512-number "faceprint" (an *embedding*). The 3 are averaged into one
    and saved, encrypted, on the phone.
-2. **Authenticate** — verify a person. Camera watches for a steady face, takes a
+2. **Authenticate**, verify a person. Camera watches for a steady face, takes a
    photo, checks it is a *live* human (not a photo/screen), asks for a couple of
    random gestures, then compares the faceprint to everyone enrolled. Match →
    "Welcome <name>" and an attendance row is written.
-3. **Sync** — when internet returns, queued attendance rows upload to AWS, then
+3. **Sync**, when internet returns, queued attendance rows upload to AWS, then
    delete locally. Fully offline until then.
 
 ---
@@ -55,7 +55,7 @@ Three screens (tabs):
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
-│  React Native (TypeScript)  — UI + orchestration              │
+│  React Native (TypeScript) , UI + orchestration              │
 │                                                                │
 │  Screens: Enroll / Auth / Sync                                 │
 │  Hooks:   useFaceAuth (state machine), useNetworkSync          │
@@ -80,7 +80,7 @@ Two separate "vision" paths, on purpose:
   produces face boxes + expression hints. No heavy AI, no lag.
 - **Heavy, on-demand:** only when a face is steady do we take a single still
   photo and feed it to the 4 ONNX models. The expensive work runs **once per
-  attempt**, not 30×/second — that is how we hit "< 1 second" on a mid-range CPU.
+  attempt**, not 30×/second, that is how we hit "< 1 second" on a mid-range CPU.
 
 ---
 
@@ -93,23 +93,23 @@ GPU. Total size ≈ **9.3 MB**, well under the 20 MB budget.
 | Step | Model | Size | Job |
 |---|---|---|---|
 | 1. Detect | SCRFD-500M | 2.5 MB | find the face box + 5 landmarks |
-| 2. Align | (math, no model) | — | rotate/scale face to a canonical pose |
+| 2. Align | (math, no model) | - | rotate/scale face to a canonical pose |
 | 3. Recognise | MobileFaceNet (INT8) | 3.4 MB | face → 512-number embedding |
 | 4. Liveness | FASNet 2.7 + 4.0 | 1.7 MB ×2 | real face vs photo/screen |
 
-### Step 1 — Detection (SCRFD)
+### Step 1 - Detection (SCRFD)
 Takes the 640×640 image, outputs candidate face boxes at 3 scales, keeps the
-most confident one after NMS (non-max suppression — removes overlapping boxes).
+most confident one after NMS (non-max suppression, removes overlapping boxes).
 Also returns 5 keypoints (eyes, nose, mouth corners) used next.
 
-### Step 2 — Alignment (ArcFace similarity transform)
+### Step 2 - Alignment (ArcFace similarity transform)
 Faces in photos are tilted/rotated. Recognition only works if every face is in
 the same canonical position. We compute a 2×3 affine matrix that maps the 5
 detected keypoints onto fixed reference positions, then warp the crop to
 112×112. **Done by hand in Kotlin** (least-squares solve via Gaussian
-elimination) to avoid an OpenCV dependency — OpenCV would add ~30 MB.
+elimination) to avoid an OpenCV dependency, OpenCV would add ~30 MB.
 
-### Step 3 — Recognition (MobileFaceNet)
+### Step 3 - Recognition (MobileFaceNet)
 The aligned 112×112 face becomes a **512-dimensional vector** (the "embedding").
 Key idea: the *same* person's photos produce vectors that point in nearly the
 same direction; different people point elsewhere. We compare with **cosine
@@ -117,7 +117,7 @@ similarity** (dot product of unit vectors). Above 0.65 → match.
 - Enrollment stores the average of 3 embeddings (more robust).
 - The vector is **L2-normalised** so cosine similarity is just a dot product.
 
-### Step 4 — Liveness (FASNet / Silent-Face anti-spoofing)
+### Step 4 - Liveness (FASNet / Silent-Face anti-spoofing)
 Crops the face at two zoom levels (2.7× and 4.0×), each fed to a small CNN that
 outputs 3 class scores. We softmax and read the "real" probability, average the
 two scales, threshold at 0.6. Catches static photos well; see §9 for the honest
@@ -136,8 +136,8 @@ limits against video.
 | **vision-camera-face-detector** | ML Kit face boxes inside a worklet | rolling our own detector worklet |
 | **react-native-worklets-core** | runs frame logic off the JS thread | reanimated worklets (heavier dep) |
 | **react-native-fs** | read the captured photo file as base64 | native file bridge (more code) |
-| **@noble/ciphers** | pure-JS AES-256-GCM, no native build | WebCrypto (absent on Hermes — see §8) |
-| **react-native-get-random-values** | crypto RNG polyfill for uuid + keys | none — Hermes has no secure RNG |
+| **@noble/ciphers** | pure-JS AES-256-GCM, no native build | WebCrypto (absent on Hermes - see §8) |
+| **react-native-get-random-values** | crypto RNG polyfill for uuid + keys | none - Hermes has no secure RNG |
 | **react-native-sqlite-storage** | local relational store for records | AsyncStorage (no queries) |
 | **react-native-encrypted-storage** | Android Keystore-backed secret store | plain storage (insecure for the key) |
 | **axios** | HTTP for the S3 presigned-URL sync | fetch (fine, axios just nicer errors) |
@@ -189,15 +189,15 @@ explicit `init()` at startup; gate the UI on it (`dbReady`).
 ### 8.2 SQLite "enablePromise is not a function"
 `import { enablePromise } from 'react-native-sqlite-storage'` gave `undefined`.
 The library uses `module.exports = SQLite` (one CommonJS object), so **named
-imports don't exist** — only the default. Fixed by destructuring from the
+imports don't exist**, only the default. Fixed by destructuring from the
 default. **Lesson:** CJS default-export libraries + Hermes ≠ ES named imports.
 
 ### 8.3 The camera crashed: "invalid empty parentheses '( )'"
 The frame-processor *worklet* failed to compile. Two parts:
 - We referenced a separate `'worklet'` function inside the processor and used an
-  empty-arrow fallback — worklets-core serialised that to malformed JS. Fix:
+  empty-arrow fallback, worklets-core serialised that to malformed JS. Fix:
   **inline** the mapping, no separate worklet.
-- Even after that, it persisted — because **Metro had cached** the bundle from
+- Even after that, it persisted, because **Metro had cached** the bundle from
   *before* the `react-native-worklets-core/plugin` was added to `babel.config.js`.
   A babel-plugin change is invisible to a hot reload. Fix: `npm start --reset-cache`.
 **Lesson:** worklets are compiled JS strings; keep them self-contained, and
@@ -206,7 +206,7 @@ The frame-processor *worklet* failed to compile. Two parts:
 ### 8.4 ONNX: "ORT_NOT_IMPLEMENTED ConvInteger(10)"
 The recognition model wouldn't load. It had been quantised with
 `weight_type=QInt8`, which emits `ConvInteger` nodes with **signed int8**
-weights — ONNX Runtime's Android CPU kernel only implements the **uint8** combo.
+weights, ONNX Runtime's Android CPU kernel only implements the **uint8** combo.
 Fix: re-quantise with `QuantType.QUInt8` (`scripts/export_mobilefacenet.py`),
 ship the new 3.4 MB model. **Lesson:** model "compression" must match the
 runtime's supported op/type set, not just be small.
@@ -217,7 +217,7 @@ runtime's supported op/type set, not just be small.
 We assumed FASNet's "real" class was index 1 (true for the original Silent-Face
 repo). A diagnostic log of the **full softmax** showed live faces peaking hard at
 **index 2** (0.88–0.98) on *this* exported model. Fix: read index 2.
-**Lesson:** never assume a model's class order — **log the raw distribution and
+**Lesson:** never assume a model's class order, **log the raw distribution and
 let the data tell you.** Adding that one log turned guesswork into a one-line fix.
 
 ### 8.6 uuid + encryption: "crypto.getRandomValues() not supported"
@@ -233,7 +233,7 @@ Hermes (RN's JS engine) has **no WebCrypto**: no `crypto.getRandomValues`, no
 polyfill or a pure-JS implementation.
 
 ### 8.7 The polyfill wouldn't link: "RNGetRandomValues could not be found"
-Installed `react-native-get-random-values@2.0.0` — but `npx react-native config`
+Installed `react-native-get-random-values@2.0.0`, but `npx react-native config`
 showed `platforms.android: null`. **v2.0.0 is New-Architecture-only**; this app
 runs the **old architecture** (`bridgeless: false`), so it didn't autolink.
 Fix: pin **`1.11.0`** and **clean-rebuild** so autolinking regenerates
@@ -242,12 +242,12 @@ a native module "isn't found", check `react-native config` and do a clean build.
 
 ### 8.8 Anti-spoof: video replay is not separable
 With everything working, a **video of the user doing the gestures** still passed.
-The logs showed why: the replay scored passive liveness **0.85–0.94 — identical
+The logs showed why: the replay scored passive liveness **0.85–0.94, identical
 to a live face**. FASNet at an 80×80 crop cannot see that it's a screen. We added
 an **ordered random gesture sequence** with neutral→gesture transitions (defeats
 static photos and wrong-order replays), but a looping video can still satisfy a
 timed challenge. **Lesson:** passive CNN liveness has a hard ceiling; true
-video-replay defence needs depth/IR hardware or a server-issued nonce — beyond
+video-replay defence needs depth/IR hardware or a server-issued nonce, beyond
 "basic offline anti-spoof". Documented honestly rather than faked.
 
 ### Meta-lesson
@@ -348,21 +348,21 @@ arrays to keep the bridge payload primitive.
 
 ## 12. Jargon glossary
 
-- **Embedding** — a fixed-length number vector representing a face; similar faces
+- **Embedding**, a fixed-length number vector representing a face; similar faces
   → similar vectors.
-- **Cosine similarity** — angle-based closeness of two vectors; 1 = identical
+- **Cosine similarity**, angle-based closeness of two vectors; 1 = identical
   direction.
-- **ONNX / ONNX Runtime** — portable model format / the engine that runs it
+- **ONNX / ONNX Runtime**, portable model format / the engine that runs it
   on-device.
-- **Quantisation (INT8)** — store weights as 8-bit ints; ~4× smaller model.
-- **Worklet** — a small function compiled to run on a separate (non-JS) thread,
+- **Quantisation (INT8)**, store weights as 8-bit ints; ~4× smaller model.
+- **Worklet**, a small function compiled to run on a separate (non-JS) thread,
   used for per-frame camera work.
-- **Hermes** — React Native's JavaScript engine; lacks some browser APIs
+- **Hermes**, React Native's JavaScript engine; lacks some browser APIs
   (WebCrypto).
-- **Autolinking** — RN's mechanism to wire native modules into the build; depends
+- **Autolinking**, RN's mechanism to wire native modules into the build; depends
   on the RN architecture (old vs new).
-- **NMS** — non-max suppression; keep the best of overlapping detections.
-- **Presigned URL** — a time-limited S3 link that lets the phone upload without
+- **NMS**, non-max suppression; keep the best of overlapping detections.
+- **Presigned URL**, a time-limited S3 link that lets the phone upload without
   AWS credentials.
 
 ---
@@ -378,5 +378,5 @@ gesture sequence, recognition (match scores ~0.81–0.89), offline queue.
 - Real sync backend (placeholder URL) and end-to-end purge test.
 - Accuracy validation across many faces / lighting for the >95% claim.
 - Release signing (debug key today).
-- Stronger anti-spoof (hardware/nonce) — documented limitation.
+- Stronger anti-spoof (hardware/nonce), documented limitation.
 ```

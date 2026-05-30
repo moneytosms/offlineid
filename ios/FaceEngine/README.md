@@ -3,7 +3,7 @@
 Swift port of the Android `FaceEngineModule.kt`. Same ONNX models, same preprocessing math
 (ported byte-for-byte from `MODEL_PIPELINE.md §3`), same JS contract
 (`src/services/FaceEngine.ts`). Once linked, `NativeModules.FaceEngine` resolves on iOS and
-**every screen works unchanged** — `isFaceEngineAvailable()` flips `true`.
+**every screen works unchanged**, `isFaceEngineAvailable()` flips `true`.
 
 ## Files
 | File | Role |
@@ -13,7 +13,7 @@ Swift port of the Android `FaceEngineModule.kt`. Same ONNX models, same preproce
 | `FaceEngine.m` | `RCT_EXTERN_MODULE` bridge exposing the Swift methods to RN. |
 | `OfflineID-Bridging-Header.h` | Imports React's ObjC headers into Swift. |
 
-## Build wiring (do once in Xcode — code is build-agnostic)
+## Build wiring (do once in Xcode - code is build-agnostic)
 
 1. **Add ONNX Runtime** to `ios/Podfile` inside `target 'OfflineID'`:
    ```ruby
@@ -28,7 +28,7 @@ Swift port of the Android `FaceEngineModule.kt`. Same ONNX models, same preproce
 3. **Bridging header**: set Build Settings → *Objective-C Bridging Header* to
    `FaceEngine/OfflineID-Bridging-Header.h` (or merge its two imports into an existing one).
    Xcode also offers to create one automatically the first time you add a Swift file to an
-   ObjC project — accept, then paste the imports.
+   ObjC project, accept, then paste the imports.
 
 4. **Bundle the models**: add the 4 ONNX files to *Build Phases → Copy Bundle Resources*:
    `scrfd_500m_fixed.onnx`, `mobilefacenet_int8.onnx`, `fasnet_2_7.onnx`, `fasnet_4_0.onnx`
@@ -40,9 +40,9 @@ Swift port of the Android `FaceEngineModule.kt`. Same ONNX models, same preproce
 Build/run on a Mac: `cd ios && pod install && cd .. && npx react-native run-ios --configuration Release`.
 
 ## Parity notes
-- **Channel order**: SCRFD/MobileFaceNet RGB, FASNet **BGR** — identical to Kotlin.
+- **Channel order**: SCRFD/MobileFaceNet RGB, FASNet **BGR**, identical to Kotlin.
 - **Normalisation**: SCRFD `(px-127.5)/128`; MobileFaceNet `(px-127.5)/127.5`; FASNet
-  per-channel mean/std in BGR — identical constants.
+  per-channel mean/std in BGR, identical constants.
 - **Live class index = 2** in the FASNet softmax (same as the device-verified Android value).
 - **Pixel origin**: `RGBAImage` renders top-left-origin to match `Bitmap.getPixels`, so
   alignment + crops line up with the Android results.
