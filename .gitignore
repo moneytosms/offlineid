@@ -88,3 +88,5 @@ models/*_raw.onnx
 scripts/Silent-Face-Anti-Spoofing/
 # Keep the 4 final ONNX bundled in android assets so the prototype runs after clone.
 !android/app/src/main/assets/*.onnx
+# Office lock/temp files
+~$*
