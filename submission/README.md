@@ -27,6 +27,7 @@ field (your GitHub repo / Google Drive).
 | `docs/BENCHMARKS.md` | Size + latency benchmarks | Performance benchmarks |
 | `docs/SPEC.md` | Full functional/technical spec | Technical Documentation |
 | `docs/SETUP_AND_USAGE.md` | Build + run + demo walkthrough | Technical Documentation |
+| `docs/HOT_RELOAD_AND_DEBUGGING.md` | Hot reload, on-device `logcat`, diagnosing "Not recognised", threshold tuning, emulator caveats | Technical Documentation |
 
 > The **PPTX presentation is a mandatory deliverable** and is already built:
 > `OfflineID_Hackathon7.pptx` (16 themed slides). Regenerate any time with
