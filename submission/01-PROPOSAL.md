@@ -59,10 +59,14 @@ lockout after repeated failures.
 
 ## Status & honesty
 
-- **Android**: complete working prototype — standalone **offline release APK**, full
-  pipeline verified on real hardware.
-- **iOS**: shares the entire RN/JS + UI layer; the native ONNX engine is a documented Swift
-  port (same contract, same models — see `02 §6`). Android is the demonstrable prototype.
+- **Android**: complete working prototype — standalone **offline release APK** (arm64-v8a,
+  ~50 MB), full pipeline verified on real hardware.
+- **iOS**: shares the entire RN/JS + UI layer; the native ONNX engine is now **written in
+  Swift** (`ios/FaceEngine/` — `FaceEngine.swift`, `RGBAImage.swift`, `FaceEngine.m`),
+  a 1:1 port of the Kotlin engine with identical models, channel order, and ArcFace math.
+  Remaining work is the Xcode build wiring (Podfile + bundle resources + bridging header,
+  documented in `ios/FaceEngine/README.md`), which needs a Mac. Android is the
+  build-and-run-verified prototype for this submission.
 - **Accuracy/demographics**: backbone (MobileFaceNet, LFW 99.5%) + lighting normalisation
   today; on-device fine-tune on an Indian face subset is the field-hardening roadmap.
 
@@ -70,6 +74,14 @@ lockout after repeated failures.
 
 ➡️ **[ADD YOUR DEMO VIDEO LINK HERE]** — ≤ 3 min: enroll → live auth → spoof rejected →
 offline attendance log → reconnect + sync.
+
+## Deliverable artifacts
+
+- **Offline release APK:** `OfflineID-release.apk` (arm64-v8a, standalone, runs airplane-mode).
+  Built via `android/ && ./gradlew assembleRelease`. **Too large for the 25 MB proposal zip**
+  — ship it through the form's **"Link for the proposal"** slot (attach to a GitHub Release
+  or Drive). See `03-BUILD-OFFLINE-APK.md`.
+- **iOS native engine source:** `ios/FaceEngine/` (Swift port; build wiring in its README).
 
 ## Links
 

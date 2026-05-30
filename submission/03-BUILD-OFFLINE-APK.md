@@ -29,18 +29,26 @@ From the repo root:
 
 ```powershell
 cd android
-./gradlew assembleRelease --console=plain
+./gradlew assembleRelease -PreactNativeArchitectures=arm64-v8a --console=plain
 cd ..
 ```
 
-Output APK:
+Output APK (arm64-v8a, ~50 MB):
 ```
-android/app/build/outputs/apk/release/app-release.apk
+android/app/build/outputs/apk/release/app-arm64-v8a-release.apk
 ```
+
+**Why the `-PreactNativeArchitectures=arm64-v8a` flag:** the project enables an ABI split
+(`android/app/build.gradle`) so the APK ships only `arm64-v8a` — without it, the prebuilt
+ONNX Runtime + ML Kit `.so` for all four ABIs balloon the APK to ~167 MB. The flag also
+restricts the native CMake build to arm64, sidestepping a flaky `react-native-vision-camera`
+`armeabi-v7a` CMake error (`ninja: manifest 'build.ninja' still dirty`) on Windows paths
+with spaces. arm64-v8a covers effectively every field device since 2017. To build for an
+x86_64 **emulator**, pass `-PreactNativeArchitectures=x86_64` instead.
 
 Install on a device and pull the USB cable / turn on airplane mode — it runs standalone:
 ```powershell
-adb install -r android/app/build/outputs/apk/release/app-release.apk
+adb install -r android/app/build/outputs/apk/release/app-arm64-v8a-release.apk
 ```
 
 > The project's `release` build type is configured to sign with the bundled debug keystore

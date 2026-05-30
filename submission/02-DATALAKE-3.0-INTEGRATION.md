@@ -187,24 +187,29 @@ No other Datalake backend change is required for the offline auth path.
 
 ---
 
-## 6. iOS port (native engine) — required for full cross-platform
+## 6. iOS native engine (Swift) — provided
 
-The JS/UI layer is already cross-platform. The **native ONNX engine is currently Android
-(Kotlin) only**; iOS needs a Swift module exposing the same `FaceEngine` contract so
-`NativeModules.FaceEngine` resolves on iOS.
+The Swift port of the engine is **already written** in `ios/FaceEngine/`:
+- `FaceEngine.swift` — `initModels / releaseModels / detectFace / checkLiveness /
+  getEmbedding`, SCRFD FPN decode + NMS, ArcFace 5-point align (manual least-squares),
+  FASNet softmax — a 1:1 port of `FaceEngineModule.kt`.
+- `RGBAImage.swift` — CoreGraphics pixel helper (top-left-origin RGBA), replaces Android
+  `Bitmap`; identical resize/crop/normalise behaviour.
+- `FaceEngine.m` — `RCT_EXTERN_MODULE` bridge; method signatures match `IFaceEngineNative`
+  in `src/services/FaceEngine.ts` exactly, so **no JS changes** are needed.
+- `OfflineID-Bridging-Header.h` — exposes React's ObjC headers to Swift.
 
-Port steps:
-1. Add `pod 'onnxruntime-objc'` (or `onnxruntime-c`) to `ios/Podfile`; `pod install`.
-2. Create `FaceEngine.swift` + `FaceEngine.m` (`RCT_EXTERN_MODULE`) implementing
-   `detectFace / checkLiveness / getEmbedding / initModels / releaseModels` — same
-   signatures as `IFaceEngineNative` in `src/services/FaceEngine.ts`.
-3. Reuse the **same 4 ONNX files** (bundle them as iOS resources); the pre/post-processing
-   (SCRFD decode, ArcFace 5-point align, FASNet two-scale crop, L2-normalise) mirrors the
-   Kotlin implementation 1:1 — port the math, not the models.
-4. CoreML execution provider is optional; the CPU provider already meets the < 1 s target.
+What remains is **Xcode build wiring** (one-time, needs a Mac) — see
+`ios/FaceEngine/README.md`:
+1. `pod 'onnxruntime-objc', '~> 1.18.0'` in `ios/Podfile` → `pod install`.
+2. Add the 3 source files to the `OfflineID` (or Datalake) target.
+3. Set the Objective-C Bridging Header build setting (or merge its imports).
+4. Add the 4 ONNX files to *Copy Bundle Resources* (same files as Android assets).
+5. Add `NSCameraUsageDescription` to `Info.plist`.
 
-Because the contract is identical, **no JS changes** are needed once the Swift module
-lands — `isFaceEngineAvailable()` flips true on iOS and every screen works as-is.
+Because the contract is identical, once the module is linked `isFaceEngineAvailable()` flips
+true on iOS and every screen works as-is. CoreML execution provider is optional — the CPU
+provider already meets the < 1 s target.
 
 ---
 
