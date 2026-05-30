@@ -1,5 +1,22 @@
 #!/usr/bin/env python3
-"""Remove project deps, Android build caches, and optional toolchains."""
+"""
+uninstall_deps.py - remove what install_deps.py created.
+
+Layers (opt in as needed):
+  - Local deps (always): .venv, node_modules, Android/Gradle/Pods build dirs, __pycache__.
+  - --purge-caches: clear pip/npm caches and stop Gradle daemons.
+  - --include-user-caches: delete ~/.gradle caches, Android build-cache, npm-cache.
+  - --include-android-sdk: delete the detected Android SDK folder(s).
+  - --include-toolchains: uninstall JDK 17, Python 3.12, Node.js LTS, uv, and the
+    Android cmdline-tools from scoop/winget.
+  - --include-android-studio: with --include-toolchains, also remove Android Studio.
+  - --full: all of the above.  --dry-run: print, change nothing.
+
+Examples:
+  python scripts/uninstall_deps.py                 # local deps only
+  python scripts/uninstall_deps.py --full --dry-run # preview a complete wipe
+  python scripts/uninstall_deps.py --full           # remove everything this project added
+"""
 
 from __future__ import annotations
 
@@ -23,11 +40,13 @@ LOCAL_DEP_PATHS = [
     ROOT / "ios" / "Pods",
     ROOT / "vendor" / "bundle",
 ]
-SCOOP_TOOLCHAIN = ["android-clt", "temurin17-jdk", "python312"]
+SCOOP_TOOLCHAIN = ["android-clt", "temurin17-jdk", "python312", "nodejs-lts", "uv"]
 WINGET_TOOLCHAIN = [
     "Google.AndroidStudio",
     "EclipseAdoptium.Temurin.17.JDK",
     "Python.Python.3.12",
+    "OpenJS.NodeJS.LTS",
+    "astral-sh.uv",
 ]
 
 
