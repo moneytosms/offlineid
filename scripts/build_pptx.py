@@ -1,5 +1,5 @@
 """
-build_pptx.py — generate the OfflineID hackathon deck as a themed .pptx.
+build_pptx.py, generate the OfflineID hackathon deck as a themed .pptx.
 
 Design language matches the app's "industrial biometric terminal" UI: near-black
 background, signal-green accent, monospace readouts. 16:9, 16 slides.
@@ -203,7 +203,7 @@ def arrow_down(s, x, y, color=ACCENT):
 
 
 # =====================================================================================
-#  SLIDE 1 — TITLE
+#  SLIDE 1 - TITLE
 # =====================================================================================
 s = slide()
 rect(s, 0, 0, 0.12, SH, fill=ACCENT)
@@ -223,33 +223,33 @@ text(s, 0.9, 6.5, 11, 0.5,
        R("   ·   Datalake 3.0 integration module", 13, TEXTFAINT, False, TITLE_FONT)]])
 
 # =====================================================================================
-#  SLIDE 2 — PROBLEM
+#  SLIDE 2 - PROBLEM
 # =====================================================================================
 s = slide()
 top = chrome(s, 2, "THE PROBLEM", "Authenticating field staff where there is no network")
 bullets(s, 0.9, top, 11.6, [
-    ("Zero-network sites.", "NHAI personnel work in remote zones — cloud face APIs simply fail offline."),
+    ("Zero-network sites.", "NHAI personnel work in remote zones, cloud face APIs simply fail offline."),
     ("Fraud risk.", "Photos and phone-screen replays let people fake attendance."),
     ("Constrained hardware.", "Must run on mid-range phones: 3 GB RAM, Android 8+/iOS 12+, no GPU."),
     ("Hard targets.", "< 1 second, > 95% accuracy, diverse Indian faces, harsh outdoor light."),
-    ("Must fit Datalake 3.0.", "Ship as a React Native module — not a separate app."),
+    ("Must fit Datalake 3.0.", "Ship as a React Native module, not a separate app."),
 ], fs=16, gap=12)
 card(s, 0.9, top + 3.6, 11.5, 0.95, border=LINEB, fill=SURFACE2)
 text(s, 1.15, top + 3.75, 11.0, 0.7,
      [[R("\"", 20, ACCENT, True, TITLE_FONT),
        R("How do we authenticate field personnel securely, fully offline, on standard "
-         "phones — and integrate it into a React Native app on Android and iOS?", 14.5, TEXT, False, TITLE_FONT)]],
+         "phones, and integrate it into a React Native app on Android and iOS?", 14.5, TEXT, False, TITLE_FONT)]],
      anchor=MSO_ANCHOR.MIDDLE)
 
 # =====================================================================================
-#  SLIDE 3 — SOLUTION
+#  SLIDE 3 - SOLUTION
 # =====================================================================================
 s = slide()
 top = chrome(s, 3, "OUR SOLUTION", "A fully on-device authentication module")
 text(s, 0.9, top, 11.6, 1.1,
      [[R("Detect → prove liveness → recognise in ", 18, TEXT, False, TITLE_FONT),
        R("~50 ms", 18, ACCENT, True, MONO),
-       R(", with no internet — then ", 18, TEXT, False, TITLE_FONT),
+       R(", with no internet, then ", 18, TEXT, False, TITLE_FONT),
        R("sync-and-purge", 18, ACCENT, True, TITLE_FONT),
        R(" to AWS when back online.", 18, TEXT, False, TITLE_FONT)]],
      line_spacing=1.1)
@@ -268,7 +268,7 @@ for i, (h, b, col) in enumerate(cards):
           [R(b, 13, TEXTDIM, False, TITLE_FONT)]], space_after=8, line_spacing=1.05)
 
 # =====================================================================================
-#  SLIDE 4 — PIPELINE
+#  SLIDE 4 - PIPELINE
 # =====================================================================================
 s = slide()
 top = chrome(s, 4, "THE AI PIPELINE", "Camera still to attendance record")
@@ -288,14 +288,14 @@ for i, (t, sub, col) in enumerate(steps):
     y += bh + 0.36
 
 # =====================================================================================
-#  SLIDE 5 — WHY INNOVATIVE
+#  SLIDE 5 - WHY INNOVATIVE
 # =====================================================================================
 s = slide()
 top = chrome(s, 5, "INNOVATION · 30 MARKS", "Edge AI that earns its footprint")
 trip = [
     ("9.1 MB", "total model bundle", "INT8-quantised MobileFaceNet keeps the whole\nbundle under half the 20 MB budget."),
     ("2 layers", "of liveness", "Passive FASNet anti-spoof PLUS a randomised\nactive gesture sequence."),
-    ("0 cloud", "calls for auth", "Detection, liveness and matching all run\non-device — works in airplane mode."),
+    ("0 cloud", "calls for auth", "Detection, liveness and matching all run\non-device, works in airplane mode."),
 ]
 cw = 3.75; x0 = 0.9
 for i, (big, small, body) in enumerate(trip):
@@ -308,7 +308,7 @@ for i, (big, small, body) in enumerate(trip):
          [[R(body, 13.5, TEXT, False, TITLE_FONT)]], line_spacing=1.1)
 
 # =====================================================================================
-#  SLIDE 6 — MODEL STACK
+#  SLIDE 6 - MODEL STACK
 # =====================================================================================
 s = slide()
 top = chrome(s, 6, "MODEL STACK", "Four open-source ONNX models")
@@ -322,12 +322,12 @@ table(s, 0.9, top + 0.1, 11.5,
       col_w=[2.0, 3.4, 1.7, 4.4], row_h=0.62, head_h=0.5, fs=13.5)
 text(s, 0.9, top + 4.05, 11.5, 0.6,
      [[R("All MIT-licensed. ", 14, ACCENT, True, TITLE_FONT),
-       R("Total models 9.1 MB + ONNX Runtime ≈ 12.6 MB add to the Datalake APK — "
+       R("Total models 9.1 MB + ONNX Runtime ≈ 12.6 MB add to the Datalake APK, "
          "inside the 20 MB brief budget.", 14, TEXTDIM, False, TITLE_FONT)]],
      line_spacing=1.1)
 
 # =====================================================================================
-#  SLIDE 7 — LIVENESS / ANTI-SPOOF
+#  SLIDE 7 - LIVENESS / ANTI-SPOOF
 # =====================================================================================
 s = slide()
 top = chrome(s, 7, "LIVENESS · ANTI-SPOOF", "Two independent layers, both must pass")
@@ -346,7 +346,7 @@ text(s, 7.0, top + 0.35, 5.2, 0.5, [[R("ACTIVE", 16, ACCENT, True, MONO)]])
 bullets(s, 7.0, top + 1.0, 5.2, [
     "Randomised gesture in a 5 s window",
     "Blink (EAR) · turn (yaw ±20°) · smile",
-    "On-device ML Kit — no network",
+    "On-device ML Kit, no network",
     "Ordered sequence defeats replays",
 ], fs=13.5, gap=9, mark_color=ACCENT)
 text(s, 0.9, top + 4.0, 11.5, 0.5,
@@ -354,13 +354,13 @@ text(s, 0.9, top + 4.0, 11.5, 0.5,
        R("recognition only runs after both liveness layers pass.", 14, TEXT, False, TITLE_FONT)]])
 
 # =====================================================================================
-#  SLIDE 8 — SECURITY
+#  SLIDE 8 - SECURITY
 # =====================================================================================
 s = slide()
 top = chrome(s, 8, "SECURITY", "Privacy-first by construction")
 items = [
     ("Encrypted at rest.", "Faceprints sealed with AES-256-GCM; key in the Android Keystore."),
-    ("No raw images.", "Only 512-d embeddings are stored — never photos of faces."),
+    ("No raw images.", "Only 512-d embeddings are stored, never photos of faces."),
     ("No cloud credentials.", "Sync uses short-TTL presigned S3 URLs; device holds no AWS keys."),
     ("Abuse resistant.", "30-second lockout after repeated failed attempts."),
     ("Purge on sync.", "Attendance rows are deleted locally once the upload is confirmed."),
@@ -368,7 +368,7 @@ items = [
 bullets(s, 0.9, top + 0.1, 11.6, items, fs=16, gap=14)
 
 # =====================================================================================
-#  SLIDE 9 — OFFLINE DATA + SYNC
+#  SLIDE 9 - OFFLINE DATA + SYNC
 # =====================================================================================
 s = slide()
 top = chrome(s, 9, "OFFLINE-FIRST DATA", "Works fully offline, reconciles when online")
@@ -377,7 +377,7 @@ text(s, 1.15, top + 0.32, 5.2, 0.5, [[R("ON DEVICE", 15, ACCENT, True, MONO)]])
 bullets(s, 1.15, top + 0.95, 5.2, [
     "SQLite: face_embeddings (permanent, encrypted)",
     "SQLite: attendance_log (ephemeral queue)",
-    "Enroll · authenticate · log — all offline",
+    "Enroll · authenticate · log, all offline",
 ], fs=13.5, gap=10)
 card(s, 6.75, top + 0.1, 5.65, 3.5, border=LINEB, fill=SURFACE)
 text(s, 7.0, top + 0.32, 5.2, 0.5, [[R("SYNC & PURGE", 15, WARN, True, MONO)]])
@@ -391,11 +391,11 @@ text(s, 0.9, top + 3.8, 11.5, 0.4,
      [[R("Devices stay lean; the server becomes the single source of truth.", 13.5, TEXTDIM, False, TITLE_FONT)]])
 
 # =====================================================================================
-#  SLIDE 10 — PERFORMANCE
+#  SLIDE 10 - PERFORMANCE
 # =====================================================================================
 s = slide()
-top = chrome(s, 10, "PERFORMANCE · BENCHMARKS", "Comfortably inside every target")
-metrics = [("~50 ms", "host-CPU pipeline", "target < 1 s"),
+top = chrome(s, 10, "PERFORMANCE · BENCHMARKS", "Measured against every target")
+metrics = [("51 ms", "host-CPU pipeline", "target < 1 s"),
            ("9.1 MB", "model bundle", "cap 20 MB"),
            ("99.5%", "LFW accuracy", "target > 95%"),
            ("100%", "offline capable", "zero network")]
@@ -407,15 +407,21 @@ for i, (big, small, tgt) in enumerate(metrics):
          [[R(big, 30, ACCENT, True, TITLE_FONT)],
           [R(small.upper(), 11, TEXT, True, MONO)],
           [R(tgt, 11, TEXTFAINT, False, MONO)]], space_after=3)
-table(s, 0.9, top + 2.5, 11.5,
-      ["Model", "Avg latency", "P95"],
-      [["SCRFD-500M", "6.1 ms", "7.5 ms"],
-       ["MobileFaceNet INT8", "43.6 ms", "49.5 ms"],
-       ["FASNet 2.7 / 4.0", "1.5 ms", "2.1 ms"]],
-      col_w=[5.1, 3.2, 3.2], row_h=0.44, head_h=0.46, fs=13)
+table(s, 0.9, top + 2.35, 11.5,
+      ["Model", "Size", "Avg", "P95"],
+      [["SCRFD-500M (detect)", "2.41 MB", "6.1 ms", "7.5 ms"],
+       ["MobileFaceNet INT8 (embed)", "3.35 MB", "43.6 ms", "49.5 ms"],
+       ["MiniFASNet 2.7 / 4.0 (liveness)", "1.66 MB", "1.5 ms", "2.1 ms"]],
+      col_w=[4.6, 2.0, 2.55, 2.35], row_h=0.44, head_h=0.46, fs=12.5)
+text(s, 0.9, top + 4.25, 11.6, 0.8,
+     [[R("Host CPU · ONNX Runtime.  Pipeline = detect + 2x liveness + embed; "
+         "add align & cosine < 10 ms for end-to-end.", 12, TEXTDIM, False, TITLE_FONT)],
+      [R("App footprint on Datalake ≈ 12.6 MB (9.1 MB models + 3.5 MB runtime).  "
+         "INT8 vs FP32 cosine > 0.99 on aligned faces.", 12, TEXTDIM, False, TITLE_FONT)]],
+     space_after=3, line_spacing=1.05)
 
 # =====================================================================================
-#  SLIDE 11 — ARCHITECTURE
+#  SLIDE 11 - ARCHITECTURE
 # =====================================================================================
 s = slide()
 top = chrome(s, 11, "ARCHITECTURE", "React Native UI over a native ONNX engine")
@@ -434,7 +440,7 @@ for i, (t, sub, col) in enumerate(layers):
     y += bh + 0.28
 
 # =====================================================================================
-#  SLIDE 12 — CROSS-PLATFORM & INTEGRATION
+#  SLIDE 12 - CROSS-PLATFORM & INTEGRATION
 # =====================================================================================
 s = slide()
 top = chrome(s, 12, "FEASIBILITY · 30 MARKS", "Drops into Datalake 3.0")
@@ -448,38 +454,38 @@ bullets(s, 0.9, top + 0.05, 11.6, [
 card(s, 0.9, top + 3.5, 11.5, 1.0, border=ACCENT, fill=SURFACE2)
 text(s, 1.15, top + 3.62, 11.0, 0.8,
      [[R("iOS engine is written ", 14, TEXT, False, TITLE_FONT),
-       R("(ios/FaceEngine/, a 1:1 Swift port — same models & math)", 14, ACCENT, True, MONO),
+       R("(ios/FaceEngine/, a 1:1 Swift port, same models & math)", 14, ACCENT, True, MONO),
        R("; remaining work is one-time Xcode build wiring on a Mac.", 14, TEXT, False, TITLE_FONT)]],
      anchor=MSO_ANCHOR.MIDDLE, line_spacing=1.05)
 
 # =====================================================================================
-#  SLIDE 13 — TECH & QUALITY
+#  SLIDE 13 - TECH & QUALITY
 # =====================================================================================
 s = slide()
 top = chrome(s, 13, "ENGINEERING QUALITY", "Open-source, typed, tested")
 bullets(s, 0.9, top + 0.1, 11.6, [
-    ("Open-source only.", "MIT / Apache stack — no paid licences, source shared."),
+    ("Open-source only.", "MIT / Apache stack, no paid licences, source shared."),
     ("TypeScript strict.", "typecheck clean; 15 unit tests passing."),
-    ("Standalone offline APK.", "release build embeds JS — runs in airplane mode, no Metro."),
+    ("Standalone offline APK.", "release build embeds JS, runs in airplane mode, no Metro."),
     ("Reproducible models.", "Python export + validation scripts in the repo."),
     ("Documented.", "architecture, model pipeline, benchmarks, Datalake integration guide."),
 ], fs=16, gap=13)
 
 # =====================================================================================
-#  SLIDE 14 — ROADMAP
+#  SLIDE 14 - ROADMAP
 # =====================================================================================
 s = slide()
 top = chrome(s, 14, "SCALABILITY · SUSTAINABILITY · 20 MARKS", "Built to grow")
 bullets(s, 0.9, top + 0.1, 11.6, [
     ("Scales to N users.", "cosine match < 5 ms at 500 enrolled faces."),
     ("Lean by design.", "SQLite queue → batch S3 → purge keeps storage flat."),
-    ("Swappable models.", "update accuracy by replacing ONNX files — 8 MB headroom."),
+    ("Swappable models.", "update accuracy by replacing ONNX files, 8 MB headroom."),
     ("Demographic tuning.", "on-device fine-tune on an Indian face subset (roadmap)."),
     ("iOS device build + GPU delegate.", "next on the path to full parity."),
 ], fs=16, gap=13)
 
 # =====================================================================================
-#  SLIDE 15 — EVALUATION MAPPING
+#  SLIDE 15 - EVALUATION MAPPING
 # =====================================================================================
 s = slide()
 top = chrome(s, 15, "SCORING", "How OfflineID maps to the rubric")
@@ -492,14 +498,14 @@ table(s, 0.9, top + 0.2, 11.5,
       col_w=[4.6, 1.4, 5.5], row_h=0.66, head_h=0.5, fs=13.5)
 
 # =====================================================================================
-#  SLIDE 16 — CLOSING
+#  SLIDE 16 - CLOSING
 # =====================================================================================
 s = slide()
 rect(s, 0, 0, 0.12, SH, fill=ACCENT)
 rect(s, 0, SH - 0.12, SW, 0.12, fill=ACCENT)
 text(s, 0.9, 1.7, 11.5, 0.4, [[R("OFFLINE·ID", 16, ACCENT, True, MONO)]])
 text(s, 0.85, 2.2, 11.6, 1.5,
-     [[R("Authenticate anyone, anywhere —", 34, TEXT, True, TITLE_FONT)],
+     [[R("Authenticate anyone, anywhere,", 34, TEXT, True, TITLE_FONT)],
       [R("zero network required.", 34, TEXT, True, TITLE_FONT)]], space_after=2)
 rect(s, 0.92, 3.7, 2.0, 0.05, fill=ACCENT)
 text(s, 0.9, 4.0, 11.5, 1.2,

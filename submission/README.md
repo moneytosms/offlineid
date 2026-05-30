@@ -1,8 +1,8 @@
-# OfflineID — Hackathon 7.0 Submission Package
+# OfflineID - Hackathon 7.0 Submission Package
 
 **Programme:** Develop a mobile based secure offline facial recognition and liveness
 detection system for remote locations
-**Module:** OfflineID — an offline face-recognition + liveness module for the
+**Module:** OfflineID, an offline face-recognition + liveness module for the
 **Datalake 3.0** React Native app.
 
 This folder is the **proposal package** you upload to the registration form. The full
@@ -15,7 +15,7 @@ field (your GitHub repo / Google Drive).
 
 | File | Purpose | Maps to deliverable |
 |---|---|---|
-| `README.md` | This index + how to submit | — |
+| `README.md` | This index + how to submit | - |
 | `01-PROPOSAL.md` | Solution overview: problem → approach → why it wins | Presentation |
 | `02-DATALAKE-3.0-INTEGRATION.md` | **Exact steps to drop OfflineID into Datalake 3.0** | Feasibility / Integration steps |
 | `03-BUILD-OFFLINE-APK.md` | Build the standalone **offline** release APK (not debug/Metro) | Working Prototype |
@@ -36,11 +36,11 @@ field (your GitHub repo / Google Drive).
 
 ## How to submit (registration form)
 
-The form has two delivery slots — use both:
+The form has two delivery slots, use both:
 
 ### 1. "Upload proposal (.zip/.rar, max 25 MB)"
 Zip **this `submission/` folder** (after adding the exported `.pptx` and a demo-video
-link). Do **not** include `node_modules`, `.git`, `.venv`, or build artifacts — those
+link). Do **not** include `node_modules`, `.git`, `.venv`, or build artifacts, those
 go via the link below.
 
 **Zip it (PowerShell, from repo root):**
@@ -56,8 +56,8 @@ Compress-Archive -Path submission\* -DestinationPath OfflineID_Hackathon7_Propos
 
 ### 2. "Link for the proposal"
 A public link to the **full deliverable** that won't fit in 25 MB:
-- **Working prototype source code** (this whole repo, open-source) — push to GitHub.
-- **Signed offline APK** — `app-release.apk` (see `03-BUILD-OFFLINE-APK.md`), attach to a
+- **Working prototype source code** (this whole repo, open-source), push to GitHub.
+- **Signed offline APK**, `app-release.apk` (see `03-BUILD-OFFLINE-APK.md`), attach to a
   GitHub Release or Drive folder.
 - **Demo video** (≤ 3 min): enroll → live auth → spoof rejected → offline log → reconnect
   + sync. YouTube unlisted or Drive.
@@ -66,7 +66,7 @@ Recommended: one GitHub repo, with the APK + video on a tagged **Release**, and 
 Release URL into the form.
 
 ### Other form fields
-Name · Email (+verify) · Mobile · Team Leader name · Team Size · Captcha — fill as your team.
+Name · Email (+verify) · Mobile · Team Leader name · Team Size · Captcha, fill as your team.
 
 ---
 
@@ -74,8 +74,8 @@ Name · Email (+verify) · Mobile · Team Leader name · Team Size · Captcha �
 
 - [x] Themed **PPTX** built: `OfflineID_Hackathon7.pptx` (add team names on slide 1)
 - [ ] Demo video recorded + link added (in `01-PROPOSAL.md` and the form link)
-- [ ] Full source pushed to a **public** GitHub repo (open-source only — no paid licences)
-- [ ] **Release** (offline) APK built and attached to repo Release — see `03-BUILD-OFFLINE-APK.md`
+- [ ] Full source pushed to a **public** GitHub repo (open-source only, no paid licences)
+- [ ] **Release** (offline) APK built and attached to repo Release, see `03-BUILD-OFFLINE-APK.md`
 - [ ] Proposal zip built, **filename has no `^ & % .` except the `.zip`**, and is **< 25 MB**
 - [ ] "Link for the proposal" = the GitHub Release URL
 - [ ] Submit before **Last date: 5 June 2026** (official closure 05.06.2026)
