@@ -7,6 +7,7 @@ import android.os.Handler
 import android.os.HandlerThread
 import android.os.SystemClock
 import android.util.Base64
+import android.util.Log
 import ai.onnxruntime.OnnxTensor
 import ai.onnxruntime.OrtEnvironment
 import ai.onnxruntime.OrtException
@@ -292,6 +293,19 @@ class FaceEngineModule(private val reactContext: ReactApplicationContext) :
                 val logits = outputs.use { (it[0].value as Array<FloatArray>)[0] }
                 val realScore = parseFasnetOutput(logits)
 
+                // DIAGNOSTIC (remove after liveness tuning): full class distribution
+                // so we can see which index is "real" for a genuine live face and
+                // whether the crop is sane. Filter logcat by tag "FaceEngine".
+                val sm = softmaxAll(logits)
+                Log.d(
+                    NAME,
+                    "liveness scale=$scaleF imgWxH=${bitmap.width}x${bitmap.height} " +
+                        "bbox=[${bbox[0]},${bbox[1]},${bbox[2]},${bbox[3]}] " +
+                        "logits=${logits.joinToString(",") { "%.3f".format(it) }} " +
+                        "softmax=${sm.joinToString(",") { "%.3f".format(it) }} " +
+                        "realIdx1=${"%.3f".format(realScore)}"
+                )
+
                 val result = Arguments.createMap().apply {
                     putBoolean("isLive", realScore > FASNET_THRESHOLD)
                     putDouble("score", realScore.toDouble())
@@ -466,10 +480,22 @@ class FaceEngineModule(private val reactContext: ReactApplicationContext) :
         return out
     }
 
+    /** Full softmax distribution (diagnostic logging for liveness tuning). */
+    private fun softmaxAll(output: FloatArray): FloatArray {
+        val maxVal = output.max()
+        var sumExp = 0.0
+        val expVals = DoubleArray(output.size) {
+            val e = exp((output[it] - maxVal).toDouble()); sumExp += e; e
+        }
+        return FloatArray(output.size) { (expVals[it] / sumExp).toFloat() }
+    }
+
     /**
      * §3.5 — softmax over the 3-class FASNet logits; return P(real).
-     * Per Silent-Face's own inference (test.py): class index 1 is the live/real
-     * face; indices 0 and 2 are spoof types. Real-score = softmax[1].
+     *
+     * The shipped MiniFASNet ONNX models put the live/real class at index **2**:
+     * genuine live faces score ~0.88–0.98 there while index 0/1 stay near zero
+     * (verified on-device, both 2.7 and 4.0 scales). Real-score = softmax[2].
      */
     private fun parseFasnetOutput(output: FloatArray): Float {
         val maxVal = output.max()
@@ -477,7 +503,7 @@ class FaceEngineModule(private val reactContext: ReactApplicationContext) :
         val expVals = DoubleArray(output.size) {
             val e = exp((output[it] - maxVal).toDouble()); sumExp += e; e
         }
-        val realIdx = if (output.size > 1) 1 else 0
+        val realIdx = if (output.size >= 3) 2 else output.size - 1
         return (expVals[realIdx] / sumExp).toFloat()
     }
 

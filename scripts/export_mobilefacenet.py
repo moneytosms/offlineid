@@ -35,10 +35,15 @@ MODEL_INT8 = "../models/mobilefacenet_int8.onnx"
 def main() -> None:
     """Quantise the recogniser and verify embedding fidelity."""
     # optimize_model was removed in newer onnxruntime; dynamic quant only.
+    # weight_type MUST be QUInt8: QInt8 weights make quantize_dynamic emit
+    # ConvInteger nodes with int8 weights, and ONNX Runtime's CPU ConvInteger
+    # kernel has no implementation for that type combo on Android — inference
+    # then fails with `ORT_NOT_IMPLEMENTED ... ConvInteger(10)`. uint8 weights
+    # use the supported kernel path.
     quantize_dynamic(
         MODEL_FP32,
         MODEL_INT8,
-        weight_type=QuantType.QInt8,
+        weight_type=QuantType.QUInt8,
     )
     print(f"INT8 model saved: {MODEL_INT8}")
     print(f"Size: {os.path.getsize(MODEL_INT8) / (1024 * 1024):.2f} MB")

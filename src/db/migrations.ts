@@ -15,11 +15,14 @@
 import SQLite, {
   type SQLiteDatabase,
   type Transaction,
-  enablePromise,
-  openDatabase as sqliteOpenDatabase,
 } from 'react-native-sqlite-storage';
 
 import { ALL_TABLES } from './schema';
+
+// `react-native-sqlite-storage` ships a single CommonJS default export; its
+// functions are NOT named exports, so under Hermes `import { enablePromise }`
+// resolves to `undefined`. Always call through the default object.
+const { enablePromise, openDatabase: sqliteOpenDatabase, DEBUG } = SQLite;
 
 /** Current schema version. Bump when {@link ALL_TABLES} changes. */
 export const SCHEMA_VERSION = 1;
@@ -31,7 +34,7 @@ const DB_NAME = 'offlineid.db';
 
 // Use promise-based API throughout.
 enablePromise(true);
-SQLite.DEBUG(false);
+DEBUG(false);
 
 let dbInstance: SQLiteDatabase | null = null;
 

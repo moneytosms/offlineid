@@ -30,7 +30,7 @@ import type { BoundingBox } from '../services/FaceEngine';
 import {
   passiveLivenessCheck,
   activeGestureCheck,
-  pickRandomGesture,
+  pickGestureSequence,
 } from '../services/LivenessService';
 import type {
   Gesture,
@@ -225,19 +225,26 @@ export function useFaceAuth(): UseFaceAuth {
         return;
       }
 
-      // --- Active gesture (SPEC §9.2) ---
+      // --- Active gesture sequence (SPEC §9.2, anti-replay) ---
+      // An ordered sequence of distinct gestures: a pre-recorded replay only
+      // passes if its performed order matches this runtime-random order, and
+      // each step requires an active neutral→gesture transition.
       setPhase('GESTURE');
-      const gesture = pickRandomGesture();
-      setCurrentGesture(gesture);
-      const gestureResult = await activeGestureCheck(
-        gesture,
-        input.faceDetectorStream,
-      );
-      if (!gestureResult.passed) {
-        logger.info(TAG, 'gesture reject');
-        await logFailedAttempt(input, passive.score);
-        registerFail();
-        return;
+      const sequence = pickGestureSequence();
+      for (const gesture of sequence) {
+        setCurrentGesture(gesture);
+        // Fewer retries per step keeps a 2-gesture challenge responsive.
+        const gestureResult = await activeGestureCheck(
+          gesture,
+          input.faceDetectorStream,
+          2,
+        );
+        if (!gestureResult.passed) {
+          logger.info(TAG, `gesture reject (${gesture})`);
+          await logFailedAttempt(input, passive.score);
+          registerFail();
+          return;
+        }
       }
 
       // --- Recognition (SPEC §11) ---

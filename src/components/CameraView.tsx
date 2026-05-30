@@ -33,7 +33,6 @@ import {
 } from 'react-native-vision-camera';
 import {
   useFaceDetector,
-  type Face,
   type FrameFaceDetectionOptions,
 } from 'react-native-vision-camera-face-detector';
 import { useSharedValue, Worklets } from 'react-native-worklets-core';
@@ -83,23 +82,8 @@ export interface CameraViewProps {
   isActive?: boolean;
 }
 
-/** Map a detector {@link Face} to the {@link DetectedFace} the app consumes. */
-function mapFace(face: Face): DetectedFace {
-  'worklet';
-  return {
-    leftEyeOpenProbability: face.leftEyeOpenProbability,
-    rightEyeOpenProbability: face.rightEyeOpenProbability,
-    // ML Kit yaw → the field LivenessService gestures read.
-    headEulerAngleY: face.yawAngle,
-    smilingProbability: face.smilingProbability,
-    bounds: {
-      x: face.bounds.x,
-      y: face.bounds.y,
-      w: face.bounds.width,
-      h: face.bounds.height,
-    },
-  };
-}
+/** No-op face sink (default when no `onFaces` is supplied). */
+function noopFaces(_faces: DetectedFace[]): void {}
 
 /**
  * Live camera preview that streams faces to `onFaces` and captures stills via
@@ -141,7 +125,7 @@ function CameraViewInner(
 
   // `runOnJS` returns a JS-thread-callable proxy for the worklet (v1 API).
   const onFacesJS = useMemo(
-    () => Worklets.createRunOnJS(onFaces ?? (() => {})),
+    () => Worklets.createRunOnJS(onFaces ?? noopFaces),
     [onFaces],
   );
 
@@ -157,8 +141,27 @@ function CameraViewInner(
       // Frame gate: forward only every Nth frame to JS (SPEC §6.4).
       frameCount.value += 1;
       if (frameCount.value % FRAME_GATE !== 0) return;
+
+      // Map detector faces inline — referencing a separate worklet here makes
+      // worklets-core emit malformed JS ("invalid empty parentheses").
       const faces = detectFaces(frame);
-      onFacesJS(faces.map(mapFace));
+      const out: DetectedFace[] = [];
+      for (let i = 0; i < faces.length; i++) {
+        const f = faces[i];
+        out.push({
+          leftEyeOpenProbability: f.leftEyeOpenProbability,
+          rightEyeOpenProbability: f.rightEyeOpenProbability,
+          headEulerAngleY: f.yawAngle, // ML Kit yaw → gesture field
+          smilingProbability: f.smilingProbability,
+          bounds: {
+            x: f.bounds.x,
+            y: f.bounds.y,
+            w: f.bounds.width,
+            h: f.bounds.height,
+          },
+        });
+      }
+      onFacesJS(out);
     },
     [onFacesJS, detectFaces],
   );

@@ -87,9 +87,28 @@ export interface GestureCheckResult {
   attempts: number;
 }
 
+/** Number of ordered gestures challenged per session (anti-replay). */
+export const GESTURE_SEQUENCE_LENGTH = 2;
+
 /** Pick a random gesture for the session (SPEC §9.2). */
 export function pickRandomGesture(): Gesture {
   return GESTURES[Math.floor(Math.random() * GESTURES.length)];
+}
+
+/**
+ * Pick an ordered sequence of `n` distinct random gestures (anti-replay,
+ * SPEC §9.2). A pre-recorded video only passes if its performed gesture order
+ * matches this runtime-random order, so a static replay of "all gestures" is
+ * defeated unless it happens to match the prompted permutation.
+ */
+export function pickGestureSequence(n = GESTURE_SEQUENCE_LENGTH): Gesture[] {
+  const pool: Gesture[] = [...GESTURES];
+  const seq: Gesture[] = [];
+  for (let i = 0; i < n && pool.length > 0; i++) {
+    const idx = Math.floor(Math.random() * pool.length);
+    seq.push(pool.splice(idx, 1)[0]);
+  }
+  return seq;
 }
 
 /**
@@ -164,17 +183,27 @@ function frameSatisfiesGesture(face: MLKitFaceFrame, gesture: Gesture): boolean 
  * BLINK requires the closed condition on 2 consecutive frames (SPEC §9.2);
  * other gestures confirm on first satisfying frame.
  *
+ * Anti-replay: when `requireNeutralFirst` is set, the gesture is only accepted
+ * after a non-satisfying ("neutral") frame is first seen — the user must
+ * actively transition *into* the gesture during this window. This rejects a
+ * face that is already mid-gesture when the prompt appears (e.g. a looping
+ * replay video that happens to be smiling), and prevents one held expression
+ * from satisfying consecutive steps of a gesture sequence.
+ *
  * @param gesture - Gesture to confirm.
  * @param faceDetectorStream - Source of ML Kit face frames.
+ * @param requireNeutralFirst - Require a neutral frame before accepting (default true).
  * @returns Resolves `true` on confirmation, `false` on timeout.
  */
 function awaitGestureOnce(
   gesture: Gesture,
   faceDetectorStream: FaceDetectorStream,
+  requireNeutralFirst = true,
 ): Promise<boolean> {
   return new Promise<boolean>((resolve) => {
     let settled = false;
     let consecutiveBlink = 0;
+    let sawNeutral = !requireNeutralFirst;
 
     const finish = (ok: boolean): void => {
       if (settled) return;
@@ -188,10 +217,17 @@ function awaitGestureOnce(
 
     const unsubscribe = faceDetectorStream((face) => {
       const hit = frameSatisfiesGesture(face, gesture);
+      // Must observe a neutral (non-satisfying) frame before counting a hit.
+      if (!hit) {
+        sawNeutral = true;
+        if (gesture === 'BLINK') consecutiveBlink = 0;
+        return;
+      }
+      if (!sawNeutral) return;
       if (gesture === 'BLINK') {
-        consecutiveBlink = hit ? consecutiveBlink + 1 : 0;
+        consecutiveBlink += 1;
         if (consecutiveBlink >= 2) finish(true);
-      } else if (hit) {
+      } else {
         finish(true);
       }
     });
@@ -200,32 +236,36 @@ function awaitGestureOnce(
 
 /**
  * Run the active gesture check with retry (SPEC §9.2). Retries the same gesture
- * up to {@link GESTURE_MAX_RETRIES} times, each with a fresh 5 s window.
+ * up to `maxRetries` times, each with a fresh {@link GESTURE_TIMEOUT_MS} window.
  *
  * @param gesture - Gesture to prompt (use {@link pickRandomGesture}).
  * @param faceDetectorStream - Source of ML Kit face frames.
+ * @param maxRetries - Windows allowed before failing (default {@link GESTURE_MAX_RETRIES}).
  * @returns Pass/fail with the attempt count consumed.
  */
 export async function activeGestureCheck(
   gesture: Gesture,
   faceDetectorStream: FaceDetectorStream,
+  maxRetries = GESTURE_MAX_RETRIES,
 ): Promise<GestureCheckResult> {
-  for (let attempt = 1; attempt <= GESTURE_MAX_RETRIES; attempt++) {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
     logger.debug(TAG, `gesture=${gesture} attempt=${attempt}`);
     const passed = await awaitGestureOnce(gesture, faceDetectorStream);
     if (passed) {
       return { passed: true, gesture, attempts: attempt };
     }
   }
-  logger.warn(TAG, `gesture=${gesture} failed after ${GESTURE_MAX_RETRIES}`);
-  return { passed: false, gesture, attempts: GESTURE_MAX_RETRIES };
+  logger.warn(TAG, `gesture=${gesture} failed after ${maxRetries}`);
+  return { passed: false, gesture, attempts: maxRetries };
 }
 
 export const LivenessService = {
   passiveLivenessCheck,
   activeGestureCheck,
   pickRandomGesture,
+  pickGestureSequence,
   GESTURES,
+  GESTURE_SEQUENCE_LENGTH,
 };
 
 export default LivenessService;

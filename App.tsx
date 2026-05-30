@@ -20,6 +20,7 @@ import {
 } from 'react-native';
 
 import {FaceEngine, isFaceEngineAvailable} from './src/services/FaceEngine';
+import {openDatabase} from './src/db/migrations';
 import {AuthScreen} from './src/screens/AuthScreen';
 import {EnrollScreen} from './src/screens/EnrollScreen';
 import {SyncStatusScreen} from './src/screens/SyncStatusScreen';
@@ -40,11 +41,29 @@ const TABS: {key: Tab; label: string}[] = [
 
 function App(): React.JSX.Element {
   const [engineReady, setEngineReady] = useState(false);
+  const [dbReady, setDbReady] = useState(false);
   const [engineError, setEngineError] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>('auth');
 
-  // Auto-sync queued attendance records when connectivity returns.
-  useNetworkSync();
+  // Open the local database before anything reads it (stores + sync). Gated by
+  // `dbReady` so useNetworkSync only runs once the schema exists.
+  useEffect(() => {
+    let cancelled = false;
+    openDatabase()
+      .then(() => {
+        if (!cancelled) setDbReady(true);
+      })
+      .catch((e: unknown) => {
+        logger.error('App', 'openDatabase failed', {error: String(e)});
+        if (!cancelled) setEngineError(`Database init failed: ${String(e)}`);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Auto-sync queued attendance records when connectivity returns (after DB).
+  useNetworkSync(dbReady);
 
   useEffect(() => {
     let cancelled = false;
@@ -81,11 +100,15 @@ function App(): React.JSX.Element {
     );
   }
 
-  if (!engineReady) {
+  if (!engineReady || !dbReady) {
     return (
       <SafeAreaView style={[styles.flex, styles.center]}>
         <ActivityIndicator size="large" color="#00E676" />
-        <Text style={styles.loading}>Loading face-recognition models…</Text>
+        <Text style={styles.loading}>
+          {dbReady
+            ? 'Loading face-recognition models…'
+            : 'Preparing local database…'}
+        </Text>
       </SafeAreaView>
     );
   }

@@ -16,6 +16,18 @@ What is ready:
   and sync screens are wired to that pipeline.
 - Unit tests and TypeScript checks pass.
 
+Anti-spoofing reality (measured on-device):
+
+- Passive FASNet reliably accepts live faces (~0.93) and the active gesture
+  sequence blocks static photos and casual replays.
+- A high-quality **screen replay video scores the same as a live face**
+  (~0.85–0.94) — FASNet at an 80×80 crop cannot see the screen. Passive
+  liveness alone does not stop a tailored video. The ordered random-gesture
+  sequence (with neutral→gesture transitions) raises the bar but a looping
+  video of all gestures can still beat a challenge-response scheme. Defeating
+  that needs depth/IR hardware or a server nonce — out of scope for "basic
+  offline anti-spoofing".
+
 Remaining caveats (test on a physical device):
 
 - Pipeline is verified to build/bundle, not yet validated on real faces — run the
