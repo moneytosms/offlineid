@@ -75,7 +75,7 @@ offlineid/
 │   │   │   ├── FaceEngineModule.kt  ← ONNX Runtime Android bridge
 │   │   │   └── FaceEnginePackage.kt
 │   │   └── ios/
-│   │       ├── FaceEngineModule.swift
+│   │       ├── FaceEngine.swift
 │   │       └── FaceEngineModule.m   ← ObjC bridge header
 │   │
 │   ├── services/
@@ -350,7 +350,7 @@ val session = env.createSession(modelBytes, opts)
 
 ### 6.3 iOS Native Module (Swift)
 
-**File:** `src/native/ios/FaceEngineModule.swift`
+**File:** `ios/FaceEngine/FaceEngine.swift`
 
 ```swift
 // Key responsibilities:
@@ -360,7 +360,7 @@ val session = env.createSession(modelBytes, opts)
 // 4. Return results via RCTPromise
 
 // CocoaPods in ios/Podfile:
-// pod 'onnxruntime-mobile-c', '1.18.0'
+// pod 'onnxruntime-objc', '1.18.0'
 
 // Execution providers (iOS priority order):
 // 1. CoreML (Apple Neural Engine + GPU)
@@ -638,7 +638,7 @@ android {
 ### 13.3 iOS (ios/Podfile)
 
 ```ruby
-pod 'onnxruntime-mobile-c', '1.18.0'
+pod 'onnxruntime-objc', '1.18.0'
 pod 'onnxruntime-react-native', :path => '../node_modules/onnxruntime-react-native'
 ```
 
@@ -801,7 +801,7 @@ npm run test:e2e               # Detox E2E (requires device/emulator)
 |---|---|---|---|
 | `scripts/export_*.py` | Python | P0 | Requirements.txt |
 | `src/native/android/FaceEngineModule.kt` | Kotlin | P0 | ONNX RT AAR |
-| `src/native/ios/FaceEngineModule.swift` | Swift | P0 | ONNX RT pod |
+| `ios/FaceEngine/FaceEngine.swift` | Swift | P0 | ONNX RT pod |
 | `src/services/FaceEngine.ts` | TypeScript | P0 | Native modules |
 | `src/db/schema.ts` | TypeScript | P0 | - |
 | `src/services/EmbeddingStore.ts` | TypeScript | P0 | schema.ts |

@@ -87,7 +87,7 @@
 - Visual: embedded demo video / screen recording.
 
 ### Slide 17 - Tech & Quality
-- Open-source only, no paid licences. TypeScript strict, 16 unit tests, typecheck clean.
+- Open-source only, no paid licences. TypeScript strict, 15 unit tests, typecheck clean.
 - Standalone **offline release APK** built end-to-end (JS bundle embedded, runs airplane-mode).
 - Visual: green CI checkmarks.
 

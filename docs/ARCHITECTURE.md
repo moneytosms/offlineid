@@ -85,7 +85,7 @@ opts.addXnnpack(mapOf())  // always add XNNPACK as CPU accelerator
 
 ```
 ios/OfflineID/
-├── FaceEngineModule.swift          ← main module
+├── FaceEngine.swift          ← main module
 ├── FaceEngineModule.m              ← ObjC bridge header (required for RN)
 ├── scrfd_500m_fixed.onnx
 ├── mobilefacenet_int8.onnx

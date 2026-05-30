@@ -41,7 +41,7 @@ sequence, defeats printed photos and screen replays. Zero cloud dependency for a
 
 **Feasibility (30).** Drops into Datalake 3.0 as one native package + JS screens + an
 asset folder (see `02-DATALAKE-3.0-INTEGRATION.md`); no backend change for the offline
-path. ~50 ms host-CPU pipeline → sub-second on mid-range ARM.
+path. ~51 ms host-CPU pipeline → sub-second on mid-range ARM.
 
 **Scalability & Sustainability (20).** Offline-first SQLite queue → batch presigned-S3
 sync → local purge keeps devices lean. 500-user match < 5 ms. Models update by swapping

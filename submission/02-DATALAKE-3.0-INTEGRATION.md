@@ -17,7 +17,7 @@ OfflineID module
 ├── Native (Android, Kotlin)         ← ONNX inference engine, exposed as NativeModules.FaceEngine
 │   ├── FaceEngineModule.kt          (detectFace / checkLiveness / getEmbedding / initModels)
 │   └── FaceEnginePackage.kt         (ReactPackage registration)
-├── Native (iOS, Swift)              ← PORT REQUIRED, see §6
+├── Native (iOS, Swift)              ← Swift port provided, see §6
 ├── Model assets (≈9.1 MB)           ← 4 ONNX files in android/app/src/main/assets
 ├── JS services (src/services)       ← FaceEngine bridge, LivenessService, Stores, SyncService
 ├── JS hook (src/hooks/useFaceAuth)  ← orchestration state machine

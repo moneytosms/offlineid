@@ -88,7 +88,7 @@ Name · Email (+verify) · Mobile · Team Leader name · Team Size · Captcha, f
 |---|---|
 | React Native, Android + iOS | RN ✅ · Android native engine ✅ (offline APK) · iOS native engine **written in Swift** (`ios/FaceEngine/`), Xcode build wiring pending (needs a Mac) |
 | Model footprint ~20 MB | ✅ **9.1 MB** total model bundle |
-| < 1 s recognise + liveness | ✅ ~50 ms host-CPU pipeline; sub-second on mid-range ARM |
+| < 1 s recognise + liveness | ✅ ~51 ms host-CPU pipeline; sub-second on mid-range ARM |
 | Android 8+ / iOS 12+, 3 GB RAM, no high-end GPU | ✅ CPU-only ONNX Runtime (XNNPACK/NNAPI) |
 | > 95 % accuracy, Indian demographics, varied lighting | MobileFaceNet (LFW 99.5%) + inference-time lighting normalisation; field fine-tune = roadmap |
 | Open-source only, share source | ✅ MIT-licensed stack, full source in repo |

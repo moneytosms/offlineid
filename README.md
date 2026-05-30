@@ -28,7 +28,7 @@ Built to drop into the existing **Datalake 3.0** React Native app as a self-cont
 - **Two-layer liveness**: passive FASNet anti-spoof **plus** a randomised active gesture
   challenge (blink · smile · turn) to defeat photos and screen replays.
 - **Tiny footprint**: 9.1 MB total model bundle (cap: 20 MB); CPU-only, no GPU.
-- **Fast**: ~50 ms host-CPU pipeline; sub-second on mid-range ARM.
+- **Fast**: ~51 ms host-CPU pipeline; sub-second on mid-range ARM.
 - **Secure**: AES-256-GCM-encrypted faceprints; raw images never stored; presigned-URL sync
   (no AWS credentials on device).
 - **Cross-platform**: RN + TypeScript UI; native ONNX engine in Kotlin (Android) and Swift (iOS).
@@ -216,7 +216,7 @@ npx react-native run-ios --configuration Release
 |---|---|
 | React Native, Android + iOS | RN ✅ · Android engine ✅ (offline APK) · iOS engine written in Swift, build wiring pending |
 | Model footprint ~20 MB | ✅ 9.1 MB |
-| < 1 s recognise + liveness | ✅ ~50 ms host CPU |
+| < 1 s recognise + liveness | ✅ ~51 ms host CPU |
 | Android 8+ / iOS 12+, 3 GB RAM, no GPU | ✅ CPU-only ONNX Runtime |
 | > 95 % accuracy | MobileFaceNet LFW 99.5% + lighting normalisation |
 | Offline liveness (blink/smile/turn) | ✅ passive + active |
