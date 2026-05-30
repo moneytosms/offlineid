@@ -13,7 +13,7 @@
 ---
 
 OfflineID authenticates field personnel with **face recognition + liveness detection
-entirely offline** — no internet, no cloud API. Four lightweight ONNX models run on-device
+entirely offline**, no internet, no cloud API. Four lightweight ONNX models run on-device
 (detect → liveness → recognise) in well under a second, attendance is logged to an encrypted
 local database, and records **sync-and-purge** to AWS S3 automatically when connectivity
 returns.
@@ -24,15 +24,15 @@ Built to drop into the existing **Datalake 3.0** React Native app as a self-cont
 
 ## Highlights
 
-- **Fully offline** — recognition + liveness run on-device; zero network dependency for auth.
-- **Two-layer liveness** — passive FASNet anti-spoof **plus** a randomised active gesture
+- **Fully offline**: recognition + liveness run on-device; zero network dependency for auth.
+- **Two-layer liveness**: passive FASNet anti-spoof **plus** a randomised active gesture
   challenge (blink · smile · turn) to defeat photos and screen replays.
-- **Tiny footprint** — 9.1 MB total model bundle (cap: 20 MB); CPU-only, no GPU.
-- **Fast** — ~50 ms host-CPU pipeline; comfortably sub-second on mid-range ARM.
-- **Secure** — AES-256-GCM-encrypted faceprints; raw images never stored; presigned-URL sync
+- **Tiny footprint**: 9.1 MB total model bundle (cap: 20 MB); CPU-only, no GPU.
+- **Fast**: ~50 ms host-CPU pipeline; sub-second on mid-range ARM.
+- **Secure**: AES-256-GCM-encrypted faceprints; raw images never stored; presigned-URL sync
   (no AWS credentials on device).
-- **Cross-platform** — RN + TypeScript UI; native ONNX engine in Kotlin (Android) and Swift (iOS).
-- **Open-source only** — MIT/Apache stack, no paid licences.
+- **Cross-platform**: RN + TypeScript UI; native ONNX engine in Kotlin (Android) and Swift (iOS).
+- **Open-source only**: MIT/Apache stack, no paid licences.
 
 ---
 
@@ -70,10 +70,10 @@ Built to drop into the existing **Datalake 3.0** React Native app as a self-cont
 | Passive liveness | MiniFASNet V2 + V1SE (ONNX) | 1.66 MB × 2 |
 | Face recognition | MobileFaceNet + ArcFace, INT8 (ONNX) | 3.35 MB |
 | Inference runtime | ONNX Runtime Mobile (CPU / XNNPACK / NNAPI / CoreML) | ~3.5 MB |
-| Active gesture | ML Kit Face Detection (VisionCamera worklet) | — |
-| Local storage | SQLite + AES-256-GCM (`@noble/ciphers`) | — |
-| Cloud sync | AWS S3 via presigned URL + NetInfo | — |
-| Framework | React Native 0.75 + TypeScript (strict) | — |
+| Active gesture | ML Kit Face Detection (VisionCamera worklet) | - |
+| Local storage | SQLite + AES-256-GCM (`@noble/ciphers`) | - |
+| Cloud sync | AWS S3 via presigned URL + NetInfo | - |
+| Framework | React Native 0.75 + TypeScript (strict) | - |
 | **Total model bundle** | | **9.1 MB** |
 
 ---
@@ -103,37 +103,68 @@ Built to drop into the existing **Datalake 3.0** React Native app as a self-cont
 
 ---
 
-## Quick start
+## Dependencies
 
-### Run the standalone offline app (Android)
-
-The **release** build embeds the JS bundle and runs with no Metro and no network — this is
-the real offline app (debug mode streams JS from a dev server and is not offline).
+Two scripts manage every dependency, so you can provision or fully clean a machine.
 
 ```bash
-npm install
+# install: python venv (model-export tooling) + npm packages
+python scripts/install_deps.py
+
+# also install the system toolchain (JDK 17, Python 3.12, Node LTS, Android SDK)
+python scripts/install_deps.py --with-toolchain
+
+# uninstall: preview a complete removal, then do it
+python scripts/uninstall_deps.py --full --dry-run
+python scripts/uninstall_deps.py --full
+```
+
+`install_deps.py` uses [uv](https://github.com/astral-sh/uv) when available (falling back to
+venv + pip) and pins Torch to the CPU wheel. `uninstall_deps.py` removes local build dirs,
+user caches, the Android SDK, and the scoop/winget toolchains. Full flag list:
+[scripts/README.md](scripts/README.md).
+
+> Day to day you only need `npm install` (JS); the 4 ONNX models are already in the repo.
+> The toolchain flags are for setting up or tearing down a fresh machine.
+
+---
+
+## Build & run
+
+### Your own offline release APK (Android)
+
+The **release** build embeds the JS bundle and runs with no Metro and no network. This is the
+real offline app, and the artifact you ship and demo.
+
+```bash
+npm install --legacy-peer-deps
 cd android
 ./gradlew assembleRelease -PreactNativeArchitectures=arm64-v8a
 cd ..
 adb install -r android/app/build/outputs/apk/release/app-arm64-v8a-release.apk
 ```
 
-Then disconnect / enable airplane mode — enroll and authenticate work fully offline.
-Details + APK-size notes: [`docs/SETUP_AND_USAGE.md`](docs/SETUP_AND_USAGE.md).
+Output: `app-arm64-v8a-release.apk` (~58 MB). Enable airplane mode; enrol and authenticate
+work fully offline. The `arm64-v8a` flag keeps the APK small (a universal build is ~167 MB)
+and avoids a flaky vision-camera CMake step on Windows paths with spaces. Full notes:
+[docs/SETUP_AND_USAGE.md](docs/SETUP_AND_USAGE.md).
 
-### Develop (hot reload)
+### Debug / hot reload
+
+Debug builds stream JS from the Metro dev server, so they need a connected PC and are **not**
+offline. Use them only for development.
 
 ```bash
-npm install
-npm start                 # Metro dev server
-npm run android           # debug build on a connected device
+npm install --legacy-peer-deps
+npm start                 # Metro dev server (one terminal)
+npm run android           # debug build on a connected device (another terminal)
 ```
 
 ### iOS (needs macOS + Xcode)
 
-The native Swift engine lives in [`ios/FaceEngine/`](ios/FaceEngine/) (a 1:1 port of the
-Kotlin engine — same models, same math). One-time Xcode wiring (Podfile pod, bundle
-resources, bridging header) is documented in [`ios/FaceEngine/README.md`](ios/FaceEngine/README.md).
+The native Swift engine lives in [ios/FaceEngine/](ios/FaceEngine/) (a 1:1 port of the Kotlin
+engine, same models, same math). One-time Xcode wiring (Podfile pod, bundle resources,
+bridging header) is documented in [ios/FaceEngine/README.md](ios/FaceEngine/README.md).
 
 ```bash
 cd ios && pod install && cd ..
