@@ -5,6 +5,8 @@
 # OfflineID build artifacts (ship the APK via the GitHub Release / link, not git)
 OfflineID-release.apk
 release-build*.log
+# Proposal/archive bundles (built on demand for the submission form)
+*.zip
 
 # Xcode
 #
