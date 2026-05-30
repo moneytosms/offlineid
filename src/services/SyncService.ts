@@ -19,12 +19,12 @@ import axios, { AxiosError } from 'axios';
 
 import { AttendanceStore } from './AttendanceStore';
 import type { AttendanceLogRow } from '../db/schema';
+import { SYNC_BASE_URL } from '../config';
 import { logger } from '../utils/logger';
 
 const TAG = 'Sync';
 
-/** Backend base URL for sync endpoints (SPEC §8.1). */
-export const SYNC_BASE_URL = 'https://api.datalake.example.com';
+export { SYNC_BASE_URL };
 
 /** Records pulled / uploaded per sync pass (SPEC §18 — keep small). */
 export const SYNC_BATCH_SIZE = 10;

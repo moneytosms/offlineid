@@ -1,4 +1,7 @@
 {
   "name": "OfflineID",
-  "displayName": "OfflineID"
+  "displayName": "OfflineID",
+  "extra": {
+    "syncBaseUrl": "https://api.datalake.example.com"
+  }
 }

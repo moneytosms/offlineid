@@ -3,16 +3,13 @@
  *
  * Flow:
  *  1. Operator enters employeeId / name / department.
- *  2. Camera streams; every 5th frame runs SCRFD detection to drive a green
- *     bbox. When a face is stable, the capture button enables.
- *  3. Three captures (frontal / slight-left / slight-right). Each capture runs
+ *  2. Camera streams the ML Kit face detector to drive a green bbox. When a
+ *     face is stable, the capture button enables.
+ *  3. Three captures (frontal / slight-left / slight-right). Each capture takes
+ *     a still via {@link CameraViewHandle.capture}, then runs
  *     {@link FaceEngine.detectFace} → {@link FaceEngine.getEmbedding}.
  *  4. The 3 embeddings are averaged and L2-normalised → enrolment vector.
  *  5. {@link EmbeddingStore.enrol} persists it; success state shown.
- *
- * Frame → base64: the live preview frame processor only yields the bbox; the
- * actual embedding captures use {@link toBase64Frame} on the gated frame so we
- * feed the native engine a full still.
  *
  * @module screens/EnrollScreen
  */
@@ -27,9 +24,12 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import type { Frame } from 'react-native-vision-camera';
 
 import { CameraView } from '../components/CameraView';
+import type {
+  CameraViewHandle,
+  DetectedFace,
+} from '../components/CameraView';
 import { FaceEngine } from '../services/FaceEngine';
 import type { BoundingBox } from '../services/FaceEngine';
 import { EmbeddingStore } from '../services/EmbeddingStore';
@@ -48,17 +48,6 @@ const EMBEDDING_DIM = 512;
 
 /** Per-capture human label (SPEC §10). */
 const CAPTURE_LABELS = ['Look straight', 'Turn slightly left', 'Turn slightly right'];
-
-/**
- * Convert a VisionCamera frame to a base64 still for the native engine.
- *
- * VisionCamera does not expose JPEG/base64 directly on the JS frame object; in
- * this build the companion frame-processor plugin attaches `.toBase64()`. The
- * cast keeps the screen decoupled from the plugin's ambient typings.
- */
-function toBase64Frame(frame: Frame): string {
-  return (frame as unknown as { toBase64: () => string }).toBase64();
-}
 
 /** L2-normalise a vector in place and return it. */
 function l2Normalise(vec: Float32Array): Float32Array {
@@ -95,32 +84,21 @@ export function EnrollScreen({
   const [error, setError] = useState<string | null>(null);
 
   const stableCount = useRef(0);
-  const busy = useRef(false);
   const embeddings = useRef<Float32Array[]>([]);
-  const lastFrame = useRef<Frame | null>(null);
+  const cameraRef = useRef<CameraViewHandle>(null);
 
   const formValid = employeeId.trim() !== '' && name.trim() !== '';
 
-  /** Gated live frame: detect face, update bbox + stability. */
-  const onFrame = useCallback(async (frame: Frame): Promise<void> => {
-    lastFrame.current = frame;
-    if (busy.current) return;
-    busy.current = true;
-    try {
-      const det = await FaceEngine.detectFace(toBase64Frame(frame));
-      if (det.found && det.bbox) {
-        setBbox(det.bbox);
-        stableCount.current += 1;
-        setStable(stableCount.current >= STABLE_LOCK_COUNT);
-      } else {
-        setBbox(null);
-        stableCount.current = 0;
-        setStable(false);
-      }
-    } catch (err) {
-      logger.warn(TAG, 'detectFace failed', err);
-    } finally {
-      busy.current = false;
+  /** Gated ML Kit face stream: drive bbox overlay + stability gate. */
+  const onFaces = useCallback((faces: DetectedFace[]): void => {
+    if (faces.length > 0) {
+      setBbox(faces[0].bounds);
+      stableCount.current += 1;
+      setStable(stableCount.current >= STABLE_LOCK_COUNT);
+    } else {
+      setBbox(null);
+      stableCount.current = 0;
+      setStable(false);
     }
   }, []);
 
@@ -152,13 +130,13 @@ export function EnrollScreen({
     }
   }, [employeeId, name, department, onEnrolled]);
 
-  /** Capture one embedding from the current stable frame. */
+  /** Capture one embedding from a freshly-taken still. */
   const onCapture = useCallback(async (): Promise<void> => {
-    const frame = lastFrame.current;
-    if (!frame || !stable) return;
+    const cam = cameraRef.current;
+    if (!cam || !stable) return;
     setError(null);
     try {
-      const b64 = toBase64Frame(frame);
+      const b64 = await cam.capture();
       const det = await FaceEngine.detectFace(b64);
       if (!det.found || !det.landmarks) {
         setError('Face lost — hold still and retry.');
@@ -256,7 +234,12 @@ export function EnrollScreen({
   // capturing / saving
   return (
     <View style={styles.fill}>
-      <CameraView onFrame={onFrame} bbox={bbox} isActive={phase === 'capturing'} />
+      <CameraView
+        ref={cameraRef}
+        onFaces={onFaces}
+        bbox={bbox}
+        isActive={phase === 'capturing'}
+      />
 
       <View style={styles.overlay} pointerEvents="box-none">
         <Text style={styles.captureCounter} accessibilityLiveRegion="polite">

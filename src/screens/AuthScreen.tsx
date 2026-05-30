@@ -10,16 +10,20 @@
  *      SUCCESS     → green overlay with matched employee name
  *      FAIL        → "Not recognised" with retry
  *      LOCKED      → rejection + 30 s lock countdown (SPEC §12)
- *  - Provide the ML Kit `faceDetectorStream` the gesture step consumes.
+ *  - Provide the ML Kit `faceDetectorStream` the gesture step consumes from the
+ *    {@link CameraView} face stream.
  *
  * @module screens/AuthScreen
  */
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import type { Frame } from 'react-native-vision-camera';
 
 import { CameraView } from '../components/CameraView';
+import type {
+  CameraViewHandle,
+  DetectedFace,
+} from '../components/CameraView';
 import { LivenessPrompt } from '../components/LivenessPrompt';
 import { useFaceAuth } from '../hooks/useFaceAuth';
 import type {
@@ -27,25 +31,6 @@ import type {
   MLKitFaceFrame,
 } from '../services/LivenessService';
 import { LOCKOUT_MS } from '../hooks/useFaceAuth';
-import { logger } from '../utils/logger';
-
-const TAG = 'Auth';
-
-/**
- * Convert a VisionCamera frame to a base64 still (see {@link EnrollScreen}).
- */
-function toBase64Frame(frame: Frame): string {
-  return (frame as unknown as { toBase64: () => string }).toBase64();
-}
-
-/**
- * Extract an ML Kit face shape from a frame, if a face-detector frame-processor
- * plugin has attached one. Returns null when unavailable.
- */
-function extractMLKitFace(frame: Frame): MLKitFaceFrame | null {
-  const faces = (frame as unknown as { faces?: MLKitFaceFrame[] }).faces;
-  return faces && faces.length > 0 ? faces[0] : null;
-}
 
 /** {@link AuthScreen} props. */
 export interface AuthScreenProps {
@@ -70,12 +55,15 @@ export function AuthScreen({
     status,
     matchedEmployee,
     currentGesture,
-    processFrame,
+    processDetection,
     startSession,
     resetSession,
   } = useFaceAuth();
 
   const [lockRemaining, setLockRemaining] = useState(0);
+
+  // Ref to the camera for on-demand still capture.
+  const cameraRef = useRef<CameraViewHandle>(null);
 
   // Fan-out registry for ML Kit faces → gesture stream listeners.
   const listeners = useRef(new Set<(f: MLKitFaceFrame) => void>());
@@ -115,24 +103,23 @@ export function AuthScreen({
     return () => clearInterval(handle);
   }, [status, resetSession, startSession]);
 
-  const onFrame = useCallback(
-    (frame: Frame): void => {
-      // Push any ML Kit face to gesture listeners (active liveness).
-      const face = extractMLKitFace(frame);
+  const onFaces = useCallback(
+    (faces: DetectedFace[]): void => {
+      const face: MLKitFaceFrame | null = faces.length > 0 ? faces[0] : null;
+
+      // Push the current face to gesture listeners (active liveness).
       if (face) {
         for (const l of listeners.current) l(face);
       }
 
-      // Feed the orchestration hook (it internally gates + ignores when busy).
-      let b64: string;
-      try {
-        b64 = toBase64Frame(frame);
-      } catch (err) {
-        logger.warn(TAG, 'frame→base64 failed', err);
-        return;
-      }
-      void processFrame({
-        base64Frame: b64,
+      // Feed the orchestration hook (it gates on stability + ignores when busy).
+      void processDetection({
+        face,
+        capture: () => {
+          const cam = cameraRef.current;
+          if (cam == null) return Promise.reject(new Error('Camera not ready'));
+          return cam.capture();
+        },
         faceDetectorStream,
         deviceId,
         locationLat,
@@ -140,7 +127,7 @@ export function AuthScreen({
         eventType: 'check_in',
       });
     },
-    [processFrame, faceDetectorStream, deviceId, locationLat, locationLon],
+    [processDetection, faceDetectorStream, deviceId, locationLat, locationLon],
   );
 
   const retry = useCallback((): void => {
@@ -152,7 +139,7 @@ export function AuthScreen({
 
   return (
     <View style={styles.fill}>
-      <CameraView onFrame={onFrame} isActive={isActive} />
+      <CameraView ref={cameraRef} onFaces={onFaces} isActive={isActive} />
 
       <View style={styles.overlay} pointerEvents="box-none">
         {status === 'DETECTING' && (
