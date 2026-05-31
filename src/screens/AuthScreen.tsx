@@ -151,9 +151,11 @@ export function AuthScreen({
         void ScreenBrightness.restore();
       }
     };
-    void check();
+    // Delay first check so sensor settles and screen-open doesn't trigger false positive.
+    const init = setTimeout(() => { void check(); }, 800);
     const id = setInterval(() => { void check(); }, 2000);
     return () => {
+      clearTimeout(init);
       clearInterval(id);
       lowLightActive.current = false;
       void ScreenBrightness.restore();

@@ -63,12 +63,12 @@ async function restore(): Promise<void> {
 
 /**
  * Lux below which the fill-light overlay activates.
- * ~120 lux = dim room / overcast indoor. Typical well-lit office is 300-500 lux.
+ * ~15 lux = near-dark (candle/no-light). Typical indoor rooms read 20-300 lux.
  */
-export const LUX_DIM_THRESHOLD = 120;
+export const LUX_DIM_THRESHOLD = 22;
 
 /** Lux above which the fill-light deactivates (hysteresis prevents flicker). */
-export const LUX_BRIGHT_THRESHOLD = 180;
+export const LUX_BRIGHT_THRESHOLD = 35;
 
 /** Returns the latest ambient lux, or -1 if the sensor is unavailable. */
 async function getLux(): Promise<number> {

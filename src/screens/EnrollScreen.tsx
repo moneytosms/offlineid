@@ -108,9 +108,10 @@ export function EnrollScreen({
         void ScreenBrightness.restore();
       }
     };
-    void check();
+    const init = setTimeout(() => { void check(); }, 800);
     const id = setInterval(() => { void check(); }, 2000);
     return () => {
+      clearTimeout(init);
       clearInterval(id);
       lowLightActive.current = false;
       void ScreenBrightness.restore();
