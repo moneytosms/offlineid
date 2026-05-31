@@ -93,9 +93,9 @@ class FaceEngineModule(private val reactContext: ReactApplicationContext) :
                 liveness40Session = loadModel(ortEnv, "fasnet_4_0.onnx")
 
                 promise.resolve("Models loaded")
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
                 releaseInternal()
-                promise.reject("INIT_ERROR", e.message, e)
+                promise.reject("INIT_ERROR", e.message ?: "initModels failed", e)
             }
         }
     }
@@ -111,8 +111,8 @@ class FaceEngineModule(private val reactContext: ReactApplicationContext) :
             try {
                 releaseInternal()
                 promise.resolve("Models released")
-            } catch (e: Exception) {
-                promise.reject("RELEASE_ERROR", e.message, e)
+            } catch (e: Throwable) {
+                promise.reject("RELEASE_ERROR", e.message ?: "releaseModels failed", e)
             }
         }
     }
@@ -194,6 +194,7 @@ class FaceEngineModule(private val reactContext: ReactApplicationContext) :
                 val scaleY = origH.toFloat() / SCRFD_SIZE
 
                 val input = preprocessForScrfd(bitmap)
+                bitmap.recycle()
                 val shape = longArrayOf(1, 3, SCRFD_SIZE.toLong(), SCRFD_SIZE.toLong())
                 val tensor = OnnxTensor.createTensor(ortEnv, FloatBuffer.wrap(input), shape)
 
@@ -237,8 +238,8 @@ class FaceEngineModule(private val reactContext: ReactApplicationContext) :
                 result.putArray("landmarks", landmarks)
 
                 promise.resolve(result)
-            } catch (e: Exception) {
-                promise.reject("DETECT_ERROR", e.message, e)
+            } catch (e: Throwable) {
+                promise.reject("DETECT_ERROR", e.message ?: "detectFace failed", e)
             }
         }
     }
@@ -284,6 +285,7 @@ class FaceEngineModule(private val reactContext: ReactApplicationContext) :
                 )
 
                 val input = preprocessForFasnet(bitmap, bbox, scaleF, FASNET_SIZE)
+                bitmap.recycle()
                 val shape = longArrayOf(1, 3, FASNET_SIZE.toLong(), FASNET_SIZE.toLong())
                 val tensor = OnnxTensor.createTensor(ortEnv, FloatBuffer.wrap(input), shape)
 
@@ -298,8 +300,8 @@ class FaceEngineModule(private val reactContext: ReactApplicationContext) :
                     putDouble("score", realScore.toDouble())
                 }
                 promise.resolve(result)
-            } catch (e: Exception) {
-                promise.reject("LIVENESS_ERROR", e.message, e)
+            } catch (e: Throwable) {
+                promise.reject("LIVENESS_ERROR", e.message ?: "checkLiveness failed", e)
             }
         }
     }
@@ -333,8 +335,10 @@ class FaceEngineModule(private val reactContext: ReactApplicationContext) :
                 // ArcFace alignment.
                 val m = estimateNorm(landmarks)
                 val aligned = warpAffine(bitmap, m, MOBILEFACENET_SIZE)
+                bitmap.recycle()
 
                 val input = preprocessForMobileFaceNet(aligned)
+                aligned.recycle()
                 val shape = longArrayOf(
                     1, 3, MOBILEFACENET_SIZE.toLong(), MOBILEFACENET_SIZE.toLong()
                 )
@@ -361,8 +365,8 @@ class FaceEngineModule(private val reactContext: ReactApplicationContext) :
                     putDouble("inferenceMs", inferMs.toDouble())
                 }
                 promise.resolve(result)
-            } catch (e: Exception) {
-                promise.reject("EMBED_ERROR", e.message, e)
+            } catch (e: Throwable) {
+                promise.reject("EMBED_ERROR", e.message ?: "getEmbedding failed", e)
             }
         }
     }
@@ -449,6 +453,7 @@ class FaceEngineModule(private val reactContext: ReactApplicationContext) :
 
         val crop = Bitmap.createBitmap(srcBitmap, x1, y1, cropW, cropH)
         val resized = Bitmap.createScaledBitmap(crop, outSize, outSize, true)
+        if (crop !== srcBitmap) crop.recycle()
 
         val mean = floatArrayOf(0.406f, 0.456f, 0.485f)  // B, G, R
         val std = floatArrayOf(0.225f, 0.224f, 0.229f)
@@ -456,6 +461,7 @@ class FaceEngineModule(private val reactContext: ReactApplicationContext) :
         val out = FloatArray(3 * n)
         val pixels = IntArray(n)
         resized.getPixels(pixels, 0, outSize, 0, 0, outSize, outSize)
+        if (resized !== crop) resized.recycle()
         for (i in 0 until n) {
             val px = pixels[i]
             val r = (px shr 16 and 0xFF) / 255f
