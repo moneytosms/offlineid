@@ -147,7 +147,7 @@ class FaceEngineModule(private val reactContext: ReactApplicationContext) :
         // Plain CPU options — reliable on every device + emulator. ONNX Runtime's
         // default CPU kernels comfortably meet the latency budget for these models.
         fun cpuOptions() = OrtSession.SessionOptions().apply {
-            setIntraOpNumThreads(2)
+            setIntraOpNumThreads(1)
             setInterOpNumThreads(1)
         }
 
@@ -329,8 +329,27 @@ class FaceEngineModule(private val reactContext: ReactApplicationContext) :
                     ?: throw IllegalStateException("Models not initialised")
                 val ortEnv = env ?: throw IllegalStateException("Env not initialised")
 
-                val bitmap = base64ToBitmap(base64Frame)
-                val landmarks = parseLandmarks(landmarksJson)
+                val rawBitmap = base64ToBitmap(base64Frame)
+                val rawLandmarks = parseLandmarks(landmarksJson)
+
+                // Scale down to at most 640 px wide before warpAffine so the
+                // IntArray(srcW*srcH) pixel read stays under ~1 MB regardless of
+                // the camera capture resolution (1280×720 → 3.5 MB otherwise).
+                val bitmap: Bitmap
+                val landmarks: Array<FloatArray>
+                if (rawBitmap.width > 640) {
+                    val scale = 640f / rawBitmap.width
+                    bitmap = Bitmap.createScaledBitmap(
+                        rawBitmap, 640, (rawBitmap.height * scale).toInt(), true
+                    )
+                    rawBitmap.recycle()
+                    landmarks = Array(5) { i ->
+                        floatArrayOf(rawLandmarks[i][0] * scale, rawLandmarks[i][1] * scale)
+                    }
+                } else {
+                    bitmap = rawBitmap
+                    landmarks = rawLandmarks
+                }
 
                 // ArcFace alignment.
                 val m = estimateNorm(landmarks)

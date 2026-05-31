@@ -227,7 +227,7 @@ export function AuthScreen({
     else if (status === 'FAIL') Vibration.vibrate(120);
   }, [status]);
 
-  const isActive = status !== 'SUCCESS' && status !== 'LOCKED';
+  const isActive = status !== 'SUCCESS' && status !== 'LOCKED' && status !== 'RECOGNISING';
 
   // Reticle colour by phase.
   const reticleTone =

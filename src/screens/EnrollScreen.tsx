@@ -88,6 +88,7 @@ export function EnrollScreen({
   const [error, setError] = useState<string | null>(null);
 
   const [lowLight, setLowLight] = useState(false);
+  const [isBusy, setIsBusy] = useState(false);
   const lowLightActive = useRef(false);
   const stableCount = useRef(0);
   const embeddings = useRef<Float32Array[]>([]);
@@ -195,8 +196,9 @@ export function EnrollScreen({
   /** Capture one embedding from a freshly-taken still. */
   const onCapture = useCallback(async (): Promise<void> => {
     const cam = cameraRef.current;
-    if (!cam || !stable) return;
+    if (!cam || !stable || isBusy) return;
     setError(null);
+    setIsBusy(true);
     try {
       const b64 = await cam.capture();
       const det = await FaceEngine.detectFace(b64);
@@ -219,8 +221,10 @@ export function EnrollScreen({
     } catch (err) {
       logger.error(TAG, 'capture failed', err);
       setError('Capture failed. Please try again.');
+    } finally {
+      setIsBusy(false);
     }
-  }, [stable, finishEnrol]);
+  }, [stable, isBusy, finishEnrol]);
 
   const startCapture = useCallback((): void => {
     embeddings.current = [];
@@ -310,7 +314,7 @@ export function EnrollScreen({
         ref={cameraRef}
         onFaces={onFaces}
         bbox={bbox}
-        isActive={phase === 'capturing'}
+        isActive={phase === 'capturing' && !isBusy}
         zoom={zoomRef.current}
       />
 
