@@ -19,13 +19,13 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { CameraView, NO_FACE_LOW_LIGHT_FRAMES } from '../components/CameraView';
+import { CameraView } from '../components/CameraView';
 import type {
   CameraViewHandle,
   DetectedFace,
 } from '../components/CameraView';
 import { FillLightOverlay } from '../components/FillLightOverlay';
-import { ScreenBrightness } from '../services/ScreenBrightness';
+import { ScreenBrightness, LUX_DIM_THRESHOLD, LUX_BRIGHT_THRESHOLD } from '../services/ScreenBrightness';
 import { LivenessPrompt } from '../components/LivenessPrompt';
 import { useFaceAuth } from '../hooks/useFaceAuth';
 import type {
@@ -66,7 +66,6 @@ export function AuthScreen({
 
   const [lockRemaining, setLockRemaining] = useState(0);
   const [lowLight, setLowLight] = useState(false);
-  const noFaceCount = useRef(0);
   const lowLightActive = useRef(false);
 
   // Ref to the camera for on-demand still capture.
@@ -114,23 +113,6 @@ export function AuthScreen({
     (faces: DetectedFace[]): void => {
       const face: MLKitFaceFrame | null = faces.length > 0 ? faces[0] : null;
 
-      // Low-light detection on JS thread — count consecutive no-face frames.
-      if (faces.length === 0) {
-        noFaceCount.current += 1;
-        if (noFaceCount.current >= NO_FACE_LOW_LIGHT_FRAMES && !lowLightActive.current) {
-          lowLightActive.current = true;
-          setLowLight(true);
-          void ScreenBrightness.setBrightness(1);
-        }
-      } else {
-        noFaceCount.current = 0;
-        if (lowLightActive.current) {
-          lowLightActive.current = false;
-          setLowLight(false);
-          void ScreenBrightness.restore();
-        }
-      }
-
       // Push the current face to gesture listeners (active liveness).
       if (face) {
         for (const l of listeners.current) l(face);
@@ -154,8 +136,29 @@ export function AuthScreen({
     [processDetection, faceDetectorStream, deviceId, locationLat, locationLon],
   );
 
-  // Restore brightness on unmount or camera deactivation.
-  useEffect(() => () => { void ScreenBrightness.restore(); }, []);
+  // Lux polling — activate fill light when dim, hold it until bright again or unmount.
+  useEffect(() => {
+    const check = async () => {
+      const lux = await ScreenBrightness.getLux();
+      if (lux < 0) return; // sensor unavailable
+      if (lux < LUX_DIM_THRESHOLD && !lowLightActive.current) {
+        lowLightActive.current = true;
+        setLowLight(true);
+        void ScreenBrightness.setBrightness(1);
+      } else if (lux >= LUX_BRIGHT_THRESHOLD && lowLightActive.current) {
+        lowLightActive.current = false;
+        setLowLight(false);
+        void ScreenBrightness.restore();
+      }
+    };
+    void check();
+    const id = setInterval(() => { void check(); }, 2000);
+    return () => {
+      clearInterval(id);
+      lowLightActive.current = false;
+      void ScreenBrightness.restore();
+    };
+  }, []);
 
   const retry = useCallback((): void => {
     resetSession();

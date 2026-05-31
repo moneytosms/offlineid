@@ -24,6 +24,8 @@ interface IScreenBrightnessNative {
   setBrightness(value: number): Promise<void>;
   /** Restore the window/display to the system brightness. */
   restore(): Promise<void>;
+  /** Latest ambient lux from the light sensor; -1 if unavailable. */
+  getLux(): Promise<number>;
 }
 
 const native: IScreenBrightnessNative | undefined = (
@@ -59,9 +61,29 @@ async function restore(): Promise<void> {
   }
 }
 
+/**
+ * Lux below which the fill-light overlay activates.
+ * ~120 lux = dim room / overcast indoor. Typical well-lit office is 300-500 lux.
+ */
+export const LUX_DIM_THRESHOLD = 120;
+
+/** Lux above which the fill-light deactivates (hysteresis prevents flicker). */
+export const LUX_BRIGHT_THRESHOLD = 180;
+
+/** Returns the latest ambient lux, or -1 if the sensor is unavailable. */
+async function getLux(): Promise<number> {
+  if (!native) return -1;
+  try {
+    return await native.getLux();
+  } catch {
+    return -1;
+  }
+}
+
 export const ScreenBrightness = {
   setBrightness,
   restore,
+  getLux,
   isAvailable: isScreenBrightnessAvailable,
 };
 

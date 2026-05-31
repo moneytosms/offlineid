@@ -23,14 +23,14 @@ import {
   View,
 } from 'react-native';
 
-import { CameraView, NO_FACE_LOW_LIGHT_FRAMES } from '../components/CameraView';
+import { CameraView } from '../components/CameraView';
 import type {
   CameraViewHandle,
   DetectedFace,
 } from '../components/CameraView';
 import { FillLightOverlay } from '../components/FillLightOverlay';
 import { FaceEngine } from '../services/FaceEngine';
-import { ScreenBrightness } from '../services/ScreenBrightness';
+import { ScreenBrightness, LUX_DIM_THRESHOLD, LUX_BRIGHT_THRESHOLD } from '../services/ScreenBrightness';
 import type { BoundingBox } from '../services/FaceEngine';
 import { EmbeddingStore } from '../services/EmbeddingStore';
 import { Button, Field, Tag } from '../ui/components';
@@ -86,35 +86,41 @@ export function EnrollScreen({
   const [error, setError] = useState<string | null>(null);
 
   const [lowLight, setLowLight] = useState(false);
-  const noFaceCount = useRef(0);
   const lowLightActive = useRef(false);
   const stableCount = useRef(0);
   const embeddings = useRef<Float32Array[]>([]);
   const cameraRef = useRef<CameraViewHandle>(null);
 
-  useEffect(() => () => { void ScreenBrightness.restore(); }, []);
+  // Lux polling — active only during capture phase; holds brightness until
+  // ambient improves, session ends, or component unmounts.
+  useEffect(() => {
+    if (phase !== 'capturing') return;
+    const check = async () => {
+      const lux = await ScreenBrightness.getLux();
+      if (lux < 0) return;
+      if (lux < LUX_DIM_THRESHOLD && !lowLightActive.current) {
+        lowLightActive.current = true;
+        setLowLight(true);
+        void ScreenBrightness.setBrightness(1);
+      } else if (lux >= LUX_BRIGHT_THRESHOLD && lowLightActive.current) {
+        lowLightActive.current = false;
+        setLowLight(false);
+        void ScreenBrightness.restore();
+      }
+    };
+    void check();
+    const id = setInterval(() => { void check(); }, 2000);
+    return () => {
+      clearInterval(id);
+      lowLightActive.current = false;
+      void ScreenBrightness.restore();
+    };
+  }, [phase]);
 
   const formValid = employeeId.trim() !== '' && name.trim() !== '';
 
   /** Gated ML Kit face stream: drive bbox overlay + stability gate. */
   const onFaces = useCallback((faces: DetectedFace[]): void => {
-    // Low-light detection on JS thread.
-    if (faces.length === 0) {
-      noFaceCount.current += 1;
-      if (noFaceCount.current >= NO_FACE_LOW_LIGHT_FRAMES && !lowLightActive.current) {
-        lowLightActive.current = true;
-        setLowLight(true);
-        void ScreenBrightness.setBrightness(1);
-      }
-    } else {
-      noFaceCount.current = 0;
-      if (lowLightActive.current) {
-        lowLightActive.current = false;
-        setLowLight(false);
-        void ScreenBrightness.restore();
-      }
-    }
-
     if (faces.length > 0) {
       setBbox(faces[0].bounds);
       stableCount.current += 1;
