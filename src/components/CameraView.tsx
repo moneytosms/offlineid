@@ -40,7 +40,6 @@ import RNFS from 'react-native-fs';
 
 import type { BoundingBox } from '../services/FaceEngine';
 import type { MLKitFaceFrame } from '../services/LivenessService';
-import { ScreenBrightness } from '../services/ScreenBrightness';
 import { logger } from '../utils/logger';
 
 const TAG = 'CameraView';
@@ -49,20 +48,10 @@ const TAG = 'CameraView';
 export const FRAME_GATE = 5;
 
 /**
- * Sample mean luminance every Nth frame for the low-light brightness boost.
- * Coarser than {@link FRAME_GATE}: reading the frame buffer is heavier than the
- * face stream, and ambient light changes slowly.
+ * How many consecutive no-face gated frames before signalling low light.
+ * At FRAME_GATE=5 and ~30fps camera: 30 processed frames ≈ 5 seconds.
  */
-const LUMA_GATE = 30;
-
-/** Sample 1 of every N Y-plane bytes when averaging luminance (cheap estimate). */
-const LUMA_STRIDE = 64;
-
-/** Mean Y (0–255) below this = dark → boost screen to act as a fill light. */
-const LUMA_LOW = 55;
-
-/** Mean Y above this (hysteresis gap vs {@link LUMA_LOW}) = restore brightness. */
-const LUMA_HIGH = 90;
+const NO_FACE_LOW_LIGHT_FRAMES = 30;
 
 /** Default bbox overlay colour. */
 const DEFAULT_OVERLAY_COLOR = '#00E676';
@@ -98,14 +87,20 @@ export interface CameraViewProps {
   /** Whether the camera is actively streaming (default true). */
   isActive?: boolean;
   /**
-   * Auto-max screen brightness in low light so the display lights the subject's
-   * face (default true). Restored when the scene brightens or the camera stops.
+   * Called when the low-light state changes. Fires with `true` after
+   * {@link NO_FACE_LOW_LIGHT_FRAMES} consecutive empty-detection gated frames
+   * (ML Kit can't find a face → likely too dark), and with `false` as soon as
+   * a face is detected again. Parent should boost screen brightness and show a
+   * fill-light overlay in response.
    */
-  autoBrightness?: boolean;
+  onLowLight?: (isLow: boolean) => void;
 }
 
 /** No-op face sink (default when no `onFaces` is supplied). */
 function noopFaces(_faces: DetectedFace[]): void {}
+
+/** No-op low-light sink. */
+function noopLowLight(_isLow: boolean): void {}
 
 /**
  * Live camera preview that streams faces to `onFaces` and captures stills via
@@ -119,7 +114,7 @@ function CameraViewInner(
     overlayColor = DEFAULT_OVERLAY_COLOR,
     front = true,
     isActive = true,
-    autoBrightness = true,
+    onLowLight,
   }: CameraViewProps,
   ref: React.Ref<CameraViewHandle>,
 ): React.JSX.Element {
@@ -130,45 +125,28 @@ function CameraViewInner(
   // Frame counter lives on the worklet thread so the gate is allocation-free.
   const frameCount = useSharedValue(0);
 
-  // Whether the screen is currently boosted for low light (JS thread).
-  const boosted = useRef(false);
+  // Consecutive gated frames with no face detected — used for low-light signal.
+  const noFaceCount = useSharedValue(0);
 
-  /** Apply hysteresis on a luminance sample: boost when dark, restore when bright. */
-  const onLuma = useCallback(
-    (avgLuma: number): void => {
-      if (!autoBrightness) return;
-      if (!boosted.current && avgLuma < LUMA_LOW) {
-        boosted.current = true;
-        void ScreenBrightness.setBrightness(1);
-        logger.debug(TAG, `low light (luma=${avgLuma.toFixed(0)}) → brightness max`);
-      } else if (boosted.current && avgLuma > LUMA_HIGH) {
-        boosted.current = false;
-        void ScreenBrightness.restore();
-        logger.debug(TAG, `light ok (luma=${avgLuma.toFixed(0)}) → brightness restored`);
-      }
-    },
-    [autoBrightness],
+  // Whether we have already fired onLowLight(true) — avoids repeated calls.
+  const lowLightFired = useSharedValue(false);
+
+  const onLowLightJS = useMemo(
+    () => Worklets.createRunOnJS(onLowLight ?? noopLowLight),
+    [onLowLight],
   );
 
-  const onLumaJS = useMemo(() => Worklets.createRunOnJS(onLuma), [onLuma]);
-
-  // Restore brightness when the camera stops, auto-boost is disabled, or unmounts.
+  // When camera stops, reset low-light state so it re-arms on next session.
   useEffect(() => {
-    if ((!isActive || !autoBrightness) && boosted.current) {
-      boosted.current = false;
-      void ScreenBrightness.restore();
-    }
-  }, [isActive, autoBrightness]);
-
-  useEffect(
-    () => () => {
-      if (boosted.current) {
-        boosted.current = false;
-        void ScreenBrightness.restore();
+    if (!isActive) {
+      noFaceCount.value = 0;
+      if (lowLightFired.value) {
+        lowLightFired.value = false;
+        onLowLightJS(false);
       }
-    },
-    [],
-  );
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isActive]);
 
   // Detector options must be referentially stable (the hook memoises on them).
   const detectorOptions = useMemo<FrameFaceDetectionOptions>(
@@ -203,28 +181,10 @@ function CameraViewInner(
       'worklet';
       frameCount.value += 1;
 
-      // Low-light sampling: average a sparse set of Y-plane (luminance) bytes
-      // on a coarse cadence and hand the mean to JS, which decides whether to
-      // boost the screen. Guarded by `autoBrightness`; reads the buffer only
-      // every LUMA_GATE frames to keep the worklet cheap.
-      if (autoBrightness && frameCount.value % LUMA_GATE === 0) {
-        const buffer = frame.toArrayBuffer();
-        const data = new Uint8Array(buffer);
-        const ySize = Math.min(frame.width * frame.height, data.length);
-        let sum = 0;
-        let n = 0;
-        for (let i = 0; i < ySize; i += LUMA_STRIDE) {
-          sum += data[i];
-          n += 1;
-        }
-        if (n > 0) onLumaJS(sum / n);
-      }
-
       // Frame gate: forward only every Nth frame to JS (SPEC §6.4).
       if (frameCount.value % FRAME_GATE !== 0) return;
 
-      // Map detector faces inline — referencing a separate worklet here makes
-      // worklets-core emit malformed JS ("invalid empty parentheses").
+      // Map detector faces inline.
       const faces = detectFaces(frame);
       const out: DetectedFace[] = [];
       for (let i = 0; i < faces.length; i++) {
@@ -232,7 +192,7 @@ function CameraViewInner(
         out.push({
           leftEyeOpenProbability: f.leftEyeOpenProbability,
           rightEyeOpenProbability: f.rightEyeOpenProbability,
-          headEulerAngleY: f.yawAngle, // ML Kit yaw → gesture field
+          headEulerAngleY: f.yawAngle,
           smilingProbability: f.smilingProbability,
           bounds: {
             x: f.bounds.x,
@@ -243,8 +203,28 @@ function CameraViewInner(
         });
       }
       onFacesJS(out);
+
+      // Low-light detection: if ML Kit can't find a face for enough consecutive
+      // gated frames, assume the scene is too dark and signal the parent.
+      if (faces.length === 0) {
+        noFaceCount.value += 1;
+        if (
+          noFaceCount.value >= NO_FACE_LOW_LIGHT_FRAMES &&
+          !lowLightFired.value
+        ) {
+          lowLightFired.value = true;
+          onLowLightJS(true);
+        }
+      } else {
+        if (lowLightFired.value) {
+          // Face found — scene is bright enough; cancel the low-light boost.
+          lowLightFired.value = false;
+          onLowLightJS(false);
+        }
+        noFaceCount.value = 0;
+      }
     },
-    [onFacesJS, detectFaces, onLumaJS, autoBrightness],
+    [onFacesJS, detectFaces, onLowLightJS],
   );
 
   useImperativeHandle(
@@ -262,7 +242,6 @@ function CameraViewInner(
         try {
           return await RNFS.readFile(photo.path, 'base64');
         } finally {
-          // Best-effort cleanup; a leaked temp file must not fail the capture.
           void RNFS.unlink(photo.path).catch((err) =>
             logger.debug(TAG, 'temp photo unlink failed', err),
           );
@@ -306,7 +285,6 @@ function CameraViewInner(
         device={device}
         isActive={isActive}
         photo={true}
-        pixelFormat="yuv"
         frameProcessor={frameProcessor}
         accessibilityLabel="Camera preview"
       />

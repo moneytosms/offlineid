@@ -14,7 +14,7 @@
  * @module screens/EnrollScreen
  */
 
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   ScrollView,
@@ -28,7 +28,9 @@ import type {
   CameraViewHandle,
   DetectedFace,
 } from '../components/CameraView';
+import { FillLightOverlay } from '../components/FillLightOverlay';
 import { FaceEngine } from '../services/FaceEngine';
+import { ScreenBrightness } from '../services/ScreenBrightness';
 import type { BoundingBox } from '../services/FaceEngine';
 import { EmbeddingStore } from '../services/EmbeddingStore';
 import { Button, Field, Tag } from '../ui/components';
@@ -83,9 +85,21 @@ export function EnrollScreen({
   const [captureIndex, setCaptureIndex] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
+  const [lowLight, setLowLight] = useState(false);
   const stableCount = useRef(0);
   const embeddings = useRef<Float32Array[]>([]);
   const cameraRef = useRef<CameraViewHandle>(null);
+
+  const handleLowLight = useCallback((isLow: boolean): void => {
+    setLowLight(isLow);
+    if (isLow) {
+      void ScreenBrightness.setBrightness(1);
+    } else {
+      void ScreenBrightness.restore();
+    }
+  }, []);
+
+  useEffect(() => () => { void ScreenBrightness.restore(); }, []);
 
   const formValid = employeeId.trim() !== '' && name.trim() !== '';
 
@@ -248,7 +262,11 @@ export function EnrollScreen({
         onFaces={onFaces}
         bbox={bbox}
         isActive={phase === 'capturing'}
+        onLowLight={handleLowLight}
       />
+
+      {/* Fill-light overlay — white panels around the oval in low light. */}
+      {lowLight && <FillLightOverlay />}
 
       {/* Scanner reticle. */}
       <View style={styles.reticleWrap} pointerEvents="none">

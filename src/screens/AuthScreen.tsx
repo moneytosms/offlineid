@@ -24,6 +24,8 @@ import type {
   CameraViewHandle,
   DetectedFace,
 } from '../components/CameraView';
+import { FillLightOverlay } from '../components/FillLightOverlay';
+import { ScreenBrightness } from '../services/ScreenBrightness';
 import { LivenessPrompt } from '../components/LivenessPrompt';
 import { useFaceAuth } from '../hooks/useFaceAuth';
 import type {
@@ -63,6 +65,7 @@ export function AuthScreen({
   } = useFaceAuth();
 
   const [lockRemaining, setLockRemaining] = useState(0);
+  const [lowLight, setLowLight] = useState(false);
 
   // Ref to the camera for on-demand still capture.
   const cameraRef = useRef<CameraViewHandle>(null);
@@ -132,6 +135,18 @@ export function AuthScreen({
     [processDetection, faceDetectorStream, deviceId, locationLat, locationLon],
   );
 
+  const handleLowLight = useCallback((isLow: boolean): void => {
+    setLowLight(isLow);
+    if (isLow) {
+      void ScreenBrightness.setBrightness(1);
+    } else {
+      void ScreenBrightness.restore();
+    }
+  }, []);
+
+  // Restore brightness on unmount.
+  useEffect(() => () => { void ScreenBrightness.restore(); }, []);
+
   const retry = useCallback((): void => {
     resetSession();
     startSession();
@@ -153,7 +168,15 @@ export function AuthScreen({
 
   return (
     <View style={styles.fill}>
-      <CameraView ref={cameraRef} onFaces={onFaces} isActive={isActive} />
+      <CameraView
+        ref={cameraRef}
+        onFaces={onFaces}
+        isActive={isActive}
+        onLowLight={handleLowLight}
+      />
+
+      {/* Fill-light overlay — white panels around the oval in low light. */}
+      {lowLight && <FillLightOverlay />}
 
       {/* Scanner reticle. */}
       <View style={styles.reticleWrap} pointerEvents="none">
