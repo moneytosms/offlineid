@@ -84,20 +84,12 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 2
         versionName "1.1.0"
+        ndk {
+            abiFilters "arm64-v8a"
+        }
     }
     androidResources {
         noCompress += ["onnx"]  // do not compress bundled ONNX model assets
-    }
-    // Ship a single-ABI APK. The prebuilt .so for ONNX Runtime + ML Kit bundle all four
-    // ABIs (~167 MB universal); arm64-v8a covers effectively every field device since 2017
-    // and cuts the APK to ~50 MB. Build x86/x86_64 only when targeting an emulator.
-    splits {
-        abi {
-            enable true
-            reset()
-            include "arm64-v8a"
-            universalApk false
-        }
     }
     signingConfigs {
         debug {
