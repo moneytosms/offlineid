@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@noble/ciphers": "^2.2.0",
+    "@react-native-community/cli-platform-android": "^14.1.0",
     "@react-native-community/netinfo": "^11.3.0",
     "@react-native-ml-kit/face-detection": "^2.0.1",
     "axios": "^1.6.0",
