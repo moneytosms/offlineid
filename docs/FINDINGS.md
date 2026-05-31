@@ -250,6 +250,83 @@ timed challenge. **Lesson:** passive CNN liveness has a hard ceiling; true
 video-replay defence needs depth/IR hardware or a server-issued nonce, beyond
 "basic offline anti-spoof". Documented honestly rather than faked.
 
+### 8.9 The app force-quit on rejection and on enrolment capture
+
+**Symptom.** Two specific moments reliably killed the app:
+1. Complete a full auth attempt that ends in rejection ("Not recognised").
+2. Tap the Capture button on the Enrolment screen.
+
+No error screen, no JS exception — the process just died silently.
+
+**What the native engine does with a photo.**
+Every time a model needs to run, the Kotlin code decodes the camera photo from
+its compressed JPEG into a raw grid of pixels held in memory — Android calls this
+a *bitmap*. A single 1280×720 photo becomes a ~3.5 MB block of memory. One
+complete auth session does this four times:
+
+| Call | Why | Memory |
+|---|---|---|
+| `detectFace` | find the face box | 3.5 MB bitmap |
+| `checkLiveness` × 2 | passive anti-spoof at two crop scales | 3.5 MB × 2 |
+| `getEmbedding` | produce the 512-number face vector | 3.5 MB bitmap + tiny aligned crop |
+
+Total: roughly **14 MB** of raw bitmaps created during a single attempt.
+
+**The first bug: nobody returned the memory.**
+When the Kotlin code finished with each bitmap it simply moved on. It never told
+Android "I'm done, you can have this memory back." Android's garbage collector
+*will* eventually reclaim it, but if the next decode request arrives before it
+does, Android has nowhere to put the new bitmap and throws an
+`OutOfMemoryError`.
+
+> *This is why the crash happened specifically at rejection and at capture:
+> those are the first moments after the full pipeline has run and all four
+> bitmaps are simultaneously alive in memory. Any single photo would have been
+> fine; the combination pushed it over the edge.*
+
+**The second bug: the crash was invisible.**
+The Kotlin code had error-catching in the right place:
+
+```kotlin
+} catch (e: Exception) {
+    promise.reject("DETECT_ERROR", e.message, e)
+}
+```
+
+This looks correct, but `OutOfMemoryError` is not an `Exception`. In Java/Kotlin
+there are two families of "something went wrong":
+
+- `Exception` — things a program can normally handle (file not found, bad input,
+  network timeout).
+- `Error` — serious system-level failures. `OutOfMemoryError` is one of these.
+
+Both are subtypes of `Throwable`. Catching only `Exception` means
+`OutOfMemoryError` flies right past the catch block, reaches the inference thread
+unhandled, and Android kills the entire app process — which is exactly what
+"force exit" looks like.
+
+**The fix.**
+Two changes to `FaceEngineModule.kt`:
+
+1. After each bitmap is no longer needed, call `bitmap.recycle()`. This
+   immediately releases the memory rather than hoping the garbage collector gets
+   to it in time. Guards like `if (resized !== original) resized.recycle()` are
+   added where Android might return the same object you passed in — you cannot
+   recycle something you didn't create.
+
+2. Change every `catch (e: Exception)` to `catch (e: Throwable)` so that
+   `OutOfMemoryError` (and any other system-level failure) is caught, turned into
+   a JS-readable error message, and surfaced as a normal rejection rather than
+   a silent process kill.
+
+**Lesson.** Memory leaks in native code don't surface during development on a
+fast Wi-Fi debug build; they only appear under the load of a real release build
+running the full pipeline. The rule is: if you allocate a native resource
+(bitmap, file, session), explicitly free it when you are done. Never rely on the
+garbage collector to do it in time. And when catching errors in a background
+thread, catch `Throwable`, not `Exception` — leaving `Error` subclasses
+uncaught terminates the whole process with no user-visible reason.
+
 ### Meta-lesson
 Most of these were **integration/runtime** issues invisible to `tsc` and `jest`
 (which all passed throughout). Type-checks and unit tests prove logic, not that
@@ -370,7 +447,9 @@ arrays to keep the bridge payload primitive.
 ## 13. What's done vs. left
 
 **Working on-device (Android):** enrol, encrypted storage, passive liveness,
-gesture sequence, recognition (match scores ~0.81–0.89), offline queue.
+gesture sequence, recognition (match scores ~0.81–0.89), offline queue, stable
+memory use across repeated auth and enrolment sessions (all native bitmaps
+explicitly recycled; §8.9).
 
 **Not done:**
 - iOS parity (Swift `FaceEngine` + pod; the JS/capture path is already
