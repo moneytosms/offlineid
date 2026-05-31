@@ -198,9 +198,17 @@ export function EnrollScreen({
     const cam = cameraRef.current;
     if (!cam || !stable || isBusy) return;
     setError(null);
+    // Take photo while camera is still active, before isBusy closes it.
+    let b64: string;
+    try {
+      b64 = await cam.capture();
+    } catch (err) {
+      logger.error(TAG, 'capture failed', err);
+      setError('Capture failed. Please try again.');
+      return;
+    }
     setIsBusy(true);
     try {
-      const b64 = await cam.capture();
       const det = await FaceEngine.detectFace(b64);
       if (!det.found || !det.landmarks) {
         setError('Face lost — hold still and retry.');

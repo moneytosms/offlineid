@@ -333,7 +333,15 @@ export function useFaceAuth(): UseFaceAuth {
       // Lock in: capture one still, then run the full ONNX pipeline once.
       busy.current = true;
       try {
-        const base64Frame = await input.capture();
+        let base64Frame: string;
+        try {
+          base64Frame = await input.capture();
+        } catch (captureErr) {
+          // Camera not ready (e.g. transitioning) — re-arm without penalty.
+          logger.debug(TAG, 'capture failed, re-arming', captureErr);
+          stableCount.current = 0;
+          return;
+        }
 
         // Native SCRFD gives the precise bbox + 5 landmarks on the still.
         const detection = await FaceEngine.detectFace(base64Frame);

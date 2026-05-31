@@ -227,7 +227,10 @@ export function AuthScreen({
     else if (status === 'FAIL') Vibration.vibrate(120);
   }, [status]);
 
-  const isActive = status !== 'SUCCESS' && status !== 'LOCKED' && status !== 'RECOGNISING';
+  // Keep camera active during RECOGNISING — tearing down the worklet runtime
+  // while ionCamera.video still has a frame in flight causes SIGSEGV.
+  // useFaceAuth already gates processDetection via statusRef + busy ref.
+  const isActive = status !== 'SUCCESS' && status !== 'LOCKED';
 
   // Reticle colour by phase.
   const reticleTone =
