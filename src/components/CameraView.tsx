@@ -27,6 +27,7 @@ import { Dimensions, StyleSheet, View } from 'react-native';
 import {
   Camera,
   useCameraDevice,
+  useCameraFormat,
   useCameraPermission,
   useFrameProcessor,
   type Frame,
@@ -111,6 +112,10 @@ function CameraViewInner(
   ref: React.Ref<CameraViewHandle>,
 ): React.JSX.Element {
   const device = useCameraDevice(front ? 'front' : 'back');
+  const format = useCameraFormat(device, [
+    { videoResolution: { width: 1280, height: 720 } },
+    { photoResolution: { width: 1280, height: 720 } },
+  ]);
   const { hasPermission, requestPermission } = useCameraPermission();
   const camera = useRef<Camera>(null);
 
@@ -234,6 +239,7 @@ function CameraViewInner(
         ref={camera}
         style={StyleSheet.absoluteFill}
         device={device}
+        format={format}
         isActive={isActive}
         photo={true}
         frameProcessor={frameProcessor}

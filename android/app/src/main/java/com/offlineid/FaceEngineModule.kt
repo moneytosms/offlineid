@@ -399,6 +399,7 @@ class FaceEngineModule(private val reactContext: ReactApplicationContext) :
         val out = FloatArray(3 * n)
         val pixels = IntArray(n)
         resized.getPixels(pixels, 0, SCRFD_SIZE, 0, 0, SCRFD_SIZE, SCRFD_SIZE)
+        if (resized != bitmap) resized.recycle()
         for (i in 0 until n) {
             val px = pixels[i]
             out[i] = ((px shr 16 and 0xFF) - 127.5f) / 128f         // R
