@@ -33,9 +33,9 @@ cd android
 cd ..
 ```
 
-Output APK (arm64-v8a, ~50 MB):
+Output APK (arm64-v8a, ~62 MB):
 ```
-android/app/build/outputs/apk/release/app-arm64-v8a-release.apk
+android/app/build/outputs/apk/release/app-release.apk
 ```
 
 **Why the `-PreactNativeArchitectures=arm64-v8a` flag:** the project enables an ABI split
@@ -48,7 +48,7 @@ x86_64 **emulator**, pass `-PreactNativeArchitectures=x86_64` instead.
 
 Install on a device and pull the USB cable / turn on airplane mode, it runs standalone:
 ```powershell
-adb install -r android/app/build/outputs/apk/release/app-arm64-v8a-release.apk
+adb install -r android/app/build/outputs/apk/release/app-release.apk
 ```
 
 > The project's `release` build type is configured to sign with the bundled debug keystore

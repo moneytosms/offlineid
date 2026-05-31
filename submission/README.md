@@ -63,7 +63,7 @@ Compress-Archive -Path submission\* -DestinationPath OfflineID_Hackathon7_Propos
 ### 2. "Link for the proposal"
 A public link to the **full deliverable** that won't fit in 25 MB:
 - **Working prototype source code** (this whole repo, open-source), push to GitHub.
-- **Signed offline APK**, `app-release.apk` (see `03-BUILD-OFFLINE-APK.md`), attach to a
+- **Signed offline APK**, `OfflineID-v1.3.0-arm64-v8a.apk` (see `03-BUILD-OFFLINE-APK.md`), attach to a
   GitHub Release or Drive folder.
 - **Demo video** (≤ 3 min): enroll → live auth → spoof rejected → offline log → reconnect
   + sync. YouTube unlisted or Drive.

@@ -272,7 +272,7 @@ npx tsc --noEmit    # TypeScript typecheck, must be clean
 | Gradle: requires AGP 8.6 / compileSdk 35 | CameraX (vision-camera 4.x) | ensure SDK 35 installed |
 | Gradle: invalid source release: 17 | `JAVA_HOME` not JDK 17 | export JDK 17 (1.2) |
 | `ninja: build.ninja still dirty` on release | vision-camera v7a CMake on a path with spaces | build with `-PreactNativeArchitectures=arm64-v8a` |
-| Red Metro screen on the release APK | installed the debug APK | install `app-arm64-v8a-release.apk` |
+| Red Metro screen on the release APK | installed the debug APK | install `OfflineID-v1.3.0-arm64-v8a.apk` |
 | Liveness always fails | FASNet expects **BGR** channel order | see MODEL_PIPELINE 3.4 |
 | Recognition accuracy low | missing ArcFace 5-point alignment | align before MobileFaceNet (native, implemented) |
 
