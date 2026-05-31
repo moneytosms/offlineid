@@ -1,6 +1,6 @@
 <div align="center">
 
-# OFFLINE·ID
+<img src="brand_logo.png" alt="OfflineID" width="220" />
 
 ### Secure offline facial recognition & liveness detection for field personnel in zero-network zones
 
