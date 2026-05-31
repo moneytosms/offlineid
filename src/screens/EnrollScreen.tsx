@@ -23,7 +23,7 @@ import {
   View,
 } from 'react-native';
 
-import { CameraView } from '../components/CameraView';
+import { CameraView, NO_FACE_LOW_LIGHT_FRAMES } from '../components/CameraView';
 import type {
   CameraViewHandle,
   DetectedFace,
@@ -86,18 +86,11 @@ export function EnrollScreen({
   const [error, setError] = useState<string | null>(null);
 
   const [lowLight, setLowLight] = useState(false);
+  const noFaceCount = useRef(0);
+  const lowLightActive = useRef(false);
   const stableCount = useRef(0);
   const embeddings = useRef<Float32Array[]>([]);
   const cameraRef = useRef<CameraViewHandle>(null);
-
-  const handleLowLight = useCallback((isLow: boolean): void => {
-    setLowLight(isLow);
-    if (isLow) {
-      void ScreenBrightness.setBrightness(1);
-    } else {
-      void ScreenBrightness.restore();
-    }
-  }, []);
 
   useEffect(() => () => { void ScreenBrightness.restore(); }, []);
 
@@ -105,6 +98,23 @@ export function EnrollScreen({
 
   /** Gated ML Kit face stream: drive bbox overlay + stability gate. */
   const onFaces = useCallback((faces: DetectedFace[]): void => {
+    // Low-light detection on JS thread.
+    if (faces.length === 0) {
+      noFaceCount.current += 1;
+      if (noFaceCount.current >= NO_FACE_LOW_LIGHT_FRAMES && !lowLightActive.current) {
+        lowLightActive.current = true;
+        setLowLight(true);
+        void ScreenBrightness.setBrightness(1);
+      }
+    } else {
+      noFaceCount.current = 0;
+      if (lowLightActive.current) {
+        lowLightActive.current = false;
+        setLowLight(false);
+        void ScreenBrightness.restore();
+      }
+    }
+
     if (faces.length > 0) {
       setBbox(faces[0].bounds);
       stableCount.current += 1;
@@ -262,7 +272,6 @@ export function EnrollScreen({
         onFaces={onFaces}
         bbox={bbox}
         isActive={phase === 'capturing'}
-        onLowLight={handleLowLight}
       />
 
       {/* Fill-light overlay — white panels around the oval in low light. */}

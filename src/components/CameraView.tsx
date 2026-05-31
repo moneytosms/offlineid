@@ -17,7 +17,6 @@
 
 import React, {
   forwardRef,
-  useCallback,
   useEffect,
   useImperativeHandle,
   useMemo,
@@ -48,10 +47,11 @@ const TAG = 'CameraView';
 export const FRAME_GATE = 5;
 
 /**
- * How many consecutive no-face gated frames before signalling low light.
+ * How many consecutive no-face gated frames before the parent should consider
+ * the scene dark (export so screens can use the same constant).
  * At FRAME_GATE=5 and ~30fps camera: 30 processed frames ≈ 5 seconds.
  */
-const NO_FACE_LOW_LIGHT_FRAMES = 30;
+export const NO_FACE_LOW_LIGHT_FRAMES = 30;
 
 /** Default bbox overlay colour. */
 const DEFAULT_OVERLAY_COLOR = '#00E676';
@@ -86,21 +86,10 @@ export interface CameraViewProps {
   front?: boolean;
   /** Whether the camera is actively streaming (default true). */
   isActive?: boolean;
-  /**
-   * Called when the low-light state changes. Fires with `true` after
-   * {@link NO_FACE_LOW_LIGHT_FRAMES} consecutive empty-detection gated frames
-   * (ML Kit can't find a face → likely too dark), and with `false` as soon as
-   * a face is detected again. Parent should boost screen brightness and show a
-   * fill-light overlay in response.
-   */
-  onLowLight?: (isLow: boolean) => void;
 }
 
 /** No-op face sink (default when no `onFaces` is supplied). */
 function noopFaces(_faces: DetectedFace[]): void {}
-
-/** No-op low-light sink. */
-function noopLowLight(_isLow: boolean): void {}
 
 /**
  * Live camera preview that streams faces to `onFaces` and captures stills via
@@ -114,7 +103,6 @@ function CameraViewInner(
     overlayColor = DEFAULT_OVERLAY_COLOR,
     front = true,
     isActive = true,
-    onLowLight,
   }: CameraViewProps,
   ref: React.Ref<CameraViewHandle>,
 ): React.JSX.Element {
@@ -124,29 +112,6 @@ function CameraViewInner(
 
   // Frame counter lives on the worklet thread so the gate is allocation-free.
   const frameCount = useSharedValue(0);
-
-  // Consecutive gated frames with no face detected — used for low-light signal.
-  const noFaceCount = useSharedValue(0);
-
-  // Whether we have already fired onLowLight(true) — avoids repeated calls.
-  const lowLightFired = useSharedValue(false);
-
-  const onLowLightJS = useMemo(
-    () => Worklets.createRunOnJS(onLowLight ?? noopLowLight),
-    [onLowLight],
-  );
-
-  // When camera stops, reset low-light state so it re-arms on next session.
-  useEffect(() => {
-    if (!isActive) {
-      noFaceCount.value = 0;
-      if (lowLightFired.value) {
-        lowLightFired.value = false;
-        onLowLightJS(false);
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isActive]);
 
   // Detector options must be referentially stable (the hook memoises on them).
   const detectorOptions = useMemo<FrameFaceDetectionOptions>(
@@ -184,7 +149,8 @@ function CameraViewInner(
       // Frame gate: forward only every Nth frame to JS (SPEC §6.4).
       if (frameCount.value % FRAME_GATE !== 0) return;
 
-      // Map detector faces inline.
+      // Map detector faces inline — referencing a separate worklet here makes
+      // worklets-core emit malformed JS ("invalid empty parentheses").
       const faces = detectFaces(frame);
       const out: DetectedFace[] = [];
       for (let i = 0; i < faces.length; i++) {
@@ -203,28 +169,8 @@ function CameraViewInner(
         });
       }
       onFacesJS(out);
-
-      // Low-light detection: if ML Kit can't find a face for enough consecutive
-      // gated frames, assume the scene is too dark and signal the parent.
-      if (faces.length === 0) {
-        noFaceCount.value += 1;
-        if (
-          noFaceCount.value >= NO_FACE_LOW_LIGHT_FRAMES &&
-          !lowLightFired.value
-        ) {
-          lowLightFired.value = true;
-          onLowLightJS(true);
-        }
-      } else {
-        if (lowLightFired.value) {
-          // Face found — scene is bright enough; cancel the low-light boost.
-          lowLightFired.value = false;
-          onLowLightJS(false);
-        }
-        noFaceCount.value = 0;
-      }
     },
-    [onFacesJS, detectFaces, onLowLightJS],
+    [onFacesJS, detectFaces],
   );
 
   useImperativeHandle(

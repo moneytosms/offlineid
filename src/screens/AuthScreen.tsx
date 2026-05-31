@@ -19,7 +19,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { CameraView } from '../components/CameraView';
+import { CameraView, NO_FACE_LOW_LIGHT_FRAMES } from '../components/CameraView';
 import type {
   CameraViewHandle,
   DetectedFace,
@@ -66,6 +66,8 @@ export function AuthScreen({
 
   const [lockRemaining, setLockRemaining] = useState(0);
   const [lowLight, setLowLight] = useState(false);
+  const noFaceCount = useRef(0);
+  const lowLightActive = useRef(false);
 
   // Ref to the camera for on-demand still capture.
   const cameraRef = useRef<CameraViewHandle>(null);
@@ -112,6 +114,23 @@ export function AuthScreen({
     (faces: DetectedFace[]): void => {
       const face: MLKitFaceFrame | null = faces.length > 0 ? faces[0] : null;
 
+      // Low-light detection on JS thread — count consecutive no-face frames.
+      if (faces.length === 0) {
+        noFaceCount.current += 1;
+        if (noFaceCount.current >= NO_FACE_LOW_LIGHT_FRAMES && !lowLightActive.current) {
+          lowLightActive.current = true;
+          setLowLight(true);
+          void ScreenBrightness.setBrightness(1);
+        }
+      } else {
+        noFaceCount.current = 0;
+        if (lowLightActive.current) {
+          lowLightActive.current = false;
+          setLowLight(false);
+          void ScreenBrightness.restore();
+        }
+      }
+
       // Push the current face to gesture listeners (active liveness).
       if (face) {
         for (const l of listeners.current) l(face);
@@ -135,16 +154,7 @@ export function AuthScreen({
     [processDetection, faceDetectorStream, deviceId, locationLat, locationLon],
   );
 
-  const handleLowLight = useCallback((isLow: boolean): void => {
-    setLowLight(isLow);
-    if (isLow) {
-      void ScreenBrightness.setBrightness(1);
-    } else {
-      void ScreenBrightness.restore();
-    }
-  }, []);
-
-  // Restore brightness on unmount.
+  // Restore brightness on unmount or camera deactivation.
   useEffect(() => () => { void ScreenBrightness.restore(); }, []);
 
   const retry = useCallback((): void => {
@@ -172,7 +182,6 @@ export function AuthScreen({
         ref={cameraRef}
         onFaces={onFaces}
         isActive={isActive}
-        onLowLight={handleLowLight}
       />
 
       {/* Fill-light overlay — white panels around the oval in low light. */}
