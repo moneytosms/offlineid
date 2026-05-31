@@ -67,49 +67,58 @@
 - Presigned URLs (15-min TTL); rate-limit 30s lockout after 5 fails.
 - Visual: 4-layer security stack (`ARCHITECTURE.md §4`).
 
-### Slide 13 - Indian Demographics & Lighting
-- Inference-time histogram equalisation + auto-gamma for harsh sun / low light / shadows.
+### Slide 13 - Low-Light & Outdoor Handling
+- Android `TYPE_LIGHT` ambient sensor: activates white fill-light overlay at **< 22 lux**, deactivates at 35 lux (configurable by operator).
+- Four white overlay panels frame the face oval — screen-as-ring-light, zero external hardware.
+- Inference-time histogram equalisation + auto-gamma for harsh sun, deep shadow, and back-lit scenes.
 - Fine-tune path on South-Asian face subset (roadmap).
-- Visual: before/after lighting correction.
+- Visual: split screen — fill-light panels active vs. off; lux gauge readout.
 
-### Slide 14 - Performance (Benchmarks)
+### Slide 14 - Field-Ready UX (v1.3.0)
+- **Configurable preferences**: operator can tune lux threshold, fill-light brightness, haptic feedback, auto-restart on result.
+- **Settings subviews**: Display · Technical · Help — clean separation of field config from model parameters.
+- **In-app Help Guide**: gesture explainers (blink/smile/turn), tips for best results, data privacy info — no external docs needed.
+- **Screen Wake-Lock**: device stays awake during scanning; **Adjustable Zoom**: persistent per-device.
+- Visual: settings subview screenshots + help guide card.
+
+### Slide 15 - Performance (Benchmarks)
 - Bundle **9.09 MB** (cap 20). Host-CPU pipeline **~51 ms**.
 - Targets: < 1s ✅, > 95% accuracy (MobileFaceNet LFW 99.5%).
 - Visual: `BENCHMARKS.md` table + budget bars.
 
-### Slide 15 - Cross-Platform & Integration
+### Slide 16 - Cross-Platform & Integration
 - React Native 0.75; native Kotlin engine (Android) + documented Swift port (iOS, same contract).
 - Drops into Datalake 3.0: register package, import screens, add SyncBadge, call `initModels()`. Zero backend changes.
 - Visual: "plugin" puzzle-piece into Datalake.
 
-### Slide 16 - Live Demo
+### Slide 17 - Live Demo
 - Enroll → Authenticate (live) → spoof rejected → go offline, log → reconnect, sync.
 - Visual: embedded demo video / screen recording.
 
-### Slide 17 - Tech & Quality
+### Slide 18 - Tech & Quality
 - Open-source only, no paid licences. TypeScript strict, 15 unit tests, typecheck clean.
-- Standalone **offline release APK** built end-to-end (JS bundle embedded, runs airplane-mode).
+- Standalone **offline release APK** v1.3.0 built end-to-end (JS bundle embedded, runs airplane-mode).
 - Visual: green CI checkmarks.
 
-### Slide 18 - Scalability & Sustainability
+### Slide 19 - Scalability & Sustainability
 - N=500 users cosine match < 5 ms; SQLite queue → batch S3 → purge keeps device lean.
 - Model updates swap ONNX files (8MB headroom under cap).
 - Visual: scale curve.
 
-### Slide 19 - Roadmap
+### Slide 20 - Roadmap
 - On-device fine-tune on Indian dataset; iOS device build; per-frame GPU delegate; FAR/FRR field tuning.
 - Visual: timeline.
 
-### Slide 20 - Closing
+### Slide 21 - Closing
 - OfflineID = secure, lightweight, fully offline face auth that plugs into Datalake 3.0.
-- Repo + docs links. Thank you / Q&A.
+- v1.3.0: field-ready, configurable, guided. Repo + docs links. Thank you / Q&A.
 
 ---
 
 ## Mapping to Evaluation Criteria
 | Criterion (marks) | Slides |
 |---|---|
-| Innovation (30) | 4, 7, 8 |
-| Feasibility (30) | 6, 14, 15, 17 |
-| Scalability & Sustainability (20) | 10, 11, 18, 19 |
+| Innovation (30) | 4, 7, 8, 13 |
+| Feasibility (30) | 6, 14, 15, 16, 18 |
+| Scalability & Sustainability (20) | 10, 11, 19, 20 |
 | Presentation & Docs (20) | whole deck + `SETUP_AND_USAGE.md`, `BENCHMARKS.md` |

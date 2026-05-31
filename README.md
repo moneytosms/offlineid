@@ -152,10 +152,10 @@ npm install --legacy-peer-deps
 cd android
 ./gradlew assembleRelease -PreactNativeArchitectures=arm64-v8a
 cd ..
-adb install -r android/app/build/outputs/apk/release/app-arm64-v8a-release.apk
+adb install -r android/app/build/outputs/apk/release/app-release.apk
 ```
 
-Output: `app-arm64-v8a-release.apk` (~58 MB). Enable airplane mode; enrol and authenticate
+Output: `app-release.apk` (~62 MB). Enable airplane mode; enrol and authenticate
 work fully offline. The `arm64-v8a` flag keeps the APK small (a universal build is ~167 MB)
 and avoids a flaky vision-camera CMake step on Windows paths with spaces. Full notes:
 [docs/SETUP_AND_USAGE.md](docs/SETUP_AND_USAGE.md).
