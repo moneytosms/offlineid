@@ -453,7 +453,6 @@ class FaceEngineModule(private val reactContext: ReactApplicationContext) :
 
         val crop = Bitmap.createBitmap(srcBitmap, x1, y1, cropW, cropH)
         val resized = Bitmap.createScaledBitmap(crop, outSize, outSize, true)
-        if (crop !== srcBitmap) crop.recycle()
 
         val mean = floatArrayOf(0.406f, 0.456f, 0.485f)  // B, G, R
         val std = floatArrayOf(0.225f, 0.224f, 0.229f)
@@ -461,7 +460,9 @@ class FaceEngineModule(private val reactContext: ReactApplicationContext) :
         val out = FloatArray(3 * n)
         val pixels = IntArray(n)
         resized.getPixels(pixels, 0, outSize, 0, 0, outSize, outSize)
+        // Recycle after getPixels; order matters — resized first in case resized === crop
         if (resized !== crop) resized.recycle()
+        if (crop !== srcBitmap) crop.recycle()
         for (i in 0 until n) {
             val px = pixels[i]
             val r = (px shr 16 and 0xFF) / 255f
