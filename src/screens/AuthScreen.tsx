@@ -17,7 +17,7 @@
  */
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, Vibration, View } from 'react-native';
 
 import { CameraView } from '../components/CameraView';
 import type {
@@ -25,7 +25,7 @@ import type {
   DetectedFace,
 } from '../components/CameraView';
 import { FillLightOverlay } from '../components/FillLightOverlay';
-import { ScreenBrightness, LUX_DIM_THRESHOLD, LUX_BRIGHT_THRESHOLD } from '../services/ScreenBrightness';
+import { ScreenBrightness, LUX_DIM_THRESHOLD } from '../services/ScreenBrightness';
 import { LivenessPrompt } from '../components/LivenessPrompt';
 import { useFaceAuth } from '../hooks/useFaceAuth';
 import type {
@@ -35,6 +35,7 @@ import type {
 import { LOCKOUT_MS } from '../hooks/useFaceAuth';
 import { Button, Mono } from '../ui/components';
 import { colors, MONO, radius, space } from '../ui/theme';
+import { PrefsStore, PREF_FILL_LIGHT_LUX, PREF_FILL_BRIGHTNESS, PREF_HAPTIC, PREF_KEEP_AWAKE, PREF_AUTO_RESTART_SECS, PREF_SHOW_MATCH_SCORE, PREF_CAMERA_ZOOM } from '../services/PrefsStore';
 
 /** {@link AuthScreen} props. */
 export interface AuthScreenProps {
@@ -71,6 +72,17 @@ export function AuthScreen({
   // Ref to the camera for on-demand still capture.
   const cameraRef = useRef<CameraViewHandle>(null);
 
+  // Prefs refs.
+  const luxThreshRef = useRef(LUX_DIM_THRESHOLD);
+  const brightRef = useRef(1.0);
+  const hapticRef = useRef(true);
+  const keepAwakeRef = useRef(true);
+  const autoRestartRef = useRef(5); // -1 = never
+  const showScoreRef = useRef(true);
+  const zoomRef = useRef(1.0);
+  const autoRestartTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const prevStatusRef = useRef<string>('');
+
   // Fan-out registry for ML Kit faces → gesture stream listeners.
   const listeners = useRef(new Set<(f: MLKitFaceFrame) => void>());
 
@@ -83,6 +95,35 @@ export function AuthScreen({
       };
     },
   ).current;
+
+  // Load prefs on mount.
+  useEffect(() => {
+    Promise.all([
+      PrefsStore.getNumber(PREF_FILL_LIGHT_LUX, LUX_DIM_THRESHOLD),
+      PrefsStore.getNumber(PREF_FILL_BRIGHTNESS, 1.0),
+      PrefsStore.getBool(PREF_HAPTIC, true),
+      PrefsStore.getBool(PREF_KEEP_AWAKE, true),
+      PrefsStore.getNumber(PREF_AUTO_RESTART_SECS, 5),
+      PrefsStore.getBool(PREF_SHOW_MATCH_SCORE, true),
+      PrefsStore.getNumber(PREF_CAMERA_ZOOM, 1.0),
+    ]).then(([lux, bright, hap, awake, restart, score, zoom]) => {
+      luxThreshRef.current = lux;
+      brightRef.current = bright;
+      hapticRef.current = hap;
+      keepAwakeRef.current = awake;
+      autoRestartRef.current = restart;
+      showScoreRef.current = score;
+      zoomRef.current = zoom;
+    });
+  }, []);
+
+  // Wake lock.
+  useEffect(() => {
+    PrefsStore.getBool(PREF_KEEP_AWAKE, true).then(on => {
+      if (on) void ScreenBrightness.acquireWakeLock();
+    });
+    return () => { void ScreenBrightness.releaseWakeLock(); };
+  }, []);
 
   // Start a session on mount.
   useEffect(() => {
@@ -141,11 +182,11 @@ export function AuthScreen({
     const check = async () => {
       const lux = await ScreenBrightness.getLux();
       if (lux < 0) return; // sensor unavailable
-      if (lux < LUX_DIM_THRESHOLD && !lowLightActive.current) {
+      if (lux < luxThreshRef.current && !lowLightActive.current) {
         lowLightActive.current = true;
         setLowLight(true);
-        void ScreenBrightness.setBrightness(1);
-      } else if (lux >= LUX_BRIGHT_THRESHOLD && lowLightActive.current) {
+        void ScreenBrightness.setBrightness(brightRef.current);
+      } else if (lux >= (luxThreshRef.current + 13) && lowLightActive.current) {
         lowLightActive.current = false;
         setLowLight(false);
         void ScreenBrightness.restore();
@@ -167,6 +208,25 @@ export function AuthScreen({
     startSession();
   }, [resetSession, startSession]);
 
+  // Auto-restart after SUCCESS or FAIL.
+  useEffect(() => {
+    if ((status !== 'SUCCESS' && status !== 'FAIL') || autoRestartRef.current === -1) return;
+    const t = setTimeout(() => {
+      retry();
+    }, autoRestartRef.current * 1000);
+    autoRestartTimerRef.current = t;
+    return () => { if (autoRestartTimerRef.current) clearTimeout(autoRestartTimerRef.current); };
+  }, [status, retry]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Haptic on SUCCESS / FAIL.
+  useEffect(() => {
+    if (prevStatusRef.current === status) return;
+    prevStatusRef.current = status;
+    if (!hapticRef.current) return;
+    if (status === 'SUCCESS') Vibration.vibrate([0, 50, 80, 50]);
+    else if (status === 'FAIL') Vibration.vibrate(120);
+  }, [status]);
+
   const isActive = status !== 'SUCCESS' && status !== 'LOCKED';
 
   // Reticle colour by phase.
@@ -187,6 +247,7 @@ export function AuthScreen({
         ref={cameraRef}
         onFaces={onFaces}
         isActive={isActive}
+        zoom={zoomRef.current}
       />
 
       {/* Fill-light overlay — white panels around the oval in low light. */}
@@ -221,9 +282,11 @@ export function AuthScreen({
             <Text style={styles.successName} accessibilityLiveRegion="assertive">
               {matchedEmployee.name}
             </Text>
-            <Mono style={styles.matchScore}>
-              MATCH {(matchedEmployee.score * 100).toFixed(0)}%
-            </Mono>
+            {showScoreRef.current && (
+              <Mono style={styles.matchScore}>
+                MATCH {(matchedEmployee.score * 100).toFixed(0)}%
+              </Mono>
+            )}
             <Button label="Next person" onPress={retry} style={styles.cardBtn} />
           </View>
         )}

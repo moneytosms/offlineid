@@ -75,4 +75,28 @@ class ScreenBrightnessModule(
     fun restore(promise: Promise) {
         setBrightness(-1.0, promise)
     }
+
+    @ReactMethod
+    fun acquireWakeLock(promise: Promise) {
+        val activity = currentActivity
+        if (activity == null) { promise.resolve(null); return }
+        UiThreadUtil.runOnUiThread {
+            try {
+                activity.window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                promise.resolve(null)
+            } catch (e: Exception) { promise.reject("wake_lock_failed", e) }
+        }
+    }
+
+    @ReactMethod
+    fun releaseWakeLock(promise: Promise) {
+        val activity = currentActivity
+        if (activity == null) { promise.resolve(null); return }
+        UiThreadUtil.runOnUiThread {
+            try {
+                activity.window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                promise.resolve(null)
+            } catch (e: Exception) { promise.reject("wake_lock_failed", e) }
+        }
+    }
 }

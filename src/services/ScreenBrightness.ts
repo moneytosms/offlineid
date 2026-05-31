@@ -26,6 +26,10 @@ interface IScreenBrightnessNative {
   restore(): Promise<void>;
   /** Latest ambient lux from the light sensor; -1 if unavailable. */
   getLux(): Promise<number>;
+  /** Acquire a wake-lock to keep screen on. */
+  acquireWakeLock(): Promise<void>;
+  /** Release the wake-lock. */
+  releaseWakeLock(): Promise<void>;
 }
 
 const native: IScreenBrightnessNative | undefined = (
@@ -80,10 +84,32 @@ async function getLux(): Promise<number> {
   }
 }
 
+/** Acquire a wake-lock to keep the screen on. */
+async function acquireWakeLock(): Promise<void> {
+  if (!native) return;
+  try {
+    await native.acquireWakeLock();
+  } catch (err) {
+    logger.warn(TAG, 'acquireWakeLock failed', err);
+  }
+}
+
+/** Release the wake-lock. */
+async function releaseWakeLock(): Promise<void> {
+  if (!native) return;
+  try {
+    await native.releaseWakeLock();
+  } catch (err) {
+    logger.warn(TAG, 'releaseWakeLock failed', err);
+  }
+}
+
 export const ScreenBrightness = {
   setBrightness,
   restore,
   getLux,
+  acquireWakeLock,
+  releaseWakeLock,
   isAvailable: isScreenBrightnessAvailable,
 };
 

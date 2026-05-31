@@ -87,6 +87,8 @@ export interface CameraViewProps {
   front?: boolean;
   /** Whether the camera is actively streaming (default true). */
   isActive?: boolean;
+  /** Camera zoom level (default 1.0). */
+  zoom?: number;
 }
 
 /** No-op face sink (default when no `onFaces` is supplied). */
@@ -104,6 +106,7 @@ function CameraViewInner(
     overlayColor = DEFAULT_OVERLAY_COLOR,
     front = true,
     isActive = true,
+    zoom = 1.0,
   }: CameraViewProps,
   ref: React.Ref<CameraViewHandle>,
 ): React.JSX.Element {
@@ -234,6 +237,7 @@ function CameraViewInner(
         isActive={isActive}
         photo={true}
         frameProcessor={frameProcessor}
+        zoom={zoom}
         accessibilityLabel="Camera preview"
       />
       {overlayStyle != null && (

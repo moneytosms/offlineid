@@ -12,6 +12,7 @@ import {
   ActivityIndicator,
   ScrollView,
   StyleSheet,
+  Switch,
   Text,
   TextInput,
   TouchableOpacity,
@@ -229,6 +230,105 @@ export function Screen({
   );
 }
 
+/** Tappable navigation row with title, optional subtitle, and chevron. */
+export function NavRow({
+  title,
+  subtitle,
+  onPress,
+}: {
+  title: string;
+  subtitle?: string;
+  onPress: () => void;
+}): React.JSX.Element {
+  return (
+    <TouchableOpacity
+      style={styles.navRow}
+      activeOpacity={0.7}
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={title}
+    >
+      <View style={styles.rowLeft}>
+        <Text style={styles.rowTitle}>{title}</Text>
+        {subtitle != null && <Text style={styles.rowSubtitle}>{subtitle}</Text>}
+      </View>
+      <Text style={styles.navChevron}>{'›'}</Text>
+    </TouchableOpacity>
+  );
+}
+
+/** Label + optional description + RN Switch on the right. */
+export function ToggleRow({
+  title,
+  subtitle,
+  value,
+  onValueChange,
+}: {
+  title: string;
+  subtitle?: string;
+  value: boolean;
+  onValueChange: (v: boolean) => void;
+}): React.JSX.Element {
+  return (
+    <View style={styles.navRow}>
+      <View style={styles.rowLeft}>
+        <Text style={styles.rowTitle}>{title}</Text>
+        {subtitle != null && <Text style={styles.rowSubtitle}>{subtitle}</Text>}
+      </View>
+      <Switch
+        value={value}
+        onValueChange={onValueChange}
+        trackColor={{ false: colors.line, true: colors.accentDim }}
+        thumbColor={value ? colors.accent : colors.textDim}
+      />
+    </View>
+  );
+}
+
+/** Label + description + − [value] + stepper on right. */
+export function StepperRow({
+  title,
+  subtitle,
+  onDecrement,
+  onIncrement,
+  displayValue,
+}: {
+  title: string;
+  subtitle?: string;
+  value: number;
+  onDecrement: () => void;
+  onIncrement: () => void;
+  displayValue: string;
+}): React.JSX.Element {
+  return (
+    <View style={styles.navRow}>
+      <View style={styles.rowLeft}>
+        <Text style={styles.rowTitle}>{title}</Text>
+        {subtitle != null && <Text style={styles.rowSubtitle}>{subtitle}</Text>}
+      </View>
+      <View style={styles.stepperRight}>
+        <TouchableOpacity
+          style={styles.stepperBtn}
+          onPress={onDecrement}
+          accessibilityLabel={`Decrease ${title}`}
+          hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
+        >
+          <Text style={styles.stepperBtnText}>{'−'}</Text>
+        </TouchableOpacity>
+        <Text style={styles.stepperValue}>{displayValue}</Text>
+        <TouchableOpacity
+          style={styles.stepperBtn}
+          onPress={onIncrement}
+          accessibilityLabel={`Increase ${title}`}
+          hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
+        >
+          <Text style={styles.stepperBtnText}>{'+'}</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.surface,
@@ -293,6 +393,38 @@ const styles = StyleSheet.create({
     backgroundColor: colors.accent,
     borderRadius: 2,
   },
+  navRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    minHeight: 56,
+    paddingVertical: 14,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.line,
+  },
+  rowLeft: { flex: 1, marginRight: space.md },
+  rowTitle: { fontSize: 15, fontWeight: '500', color: colors.text },
+  rowSubtitle: { fontSize: 12, color: colors.textDim, marginTop: 2 },
+  navChevron: { fontSize: 22, color: colors.textFaint, lineHeight: 26 },
+  stepperRight: { flexDirection: 'row', alignItems: 'center' },
+  stepperBtn: {
+    width: 36,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.surfaceAlt,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.lineBright,
+    borderRadius: radius.sm,
+  },
+  stepperBtnText: { fontSize: 18, color: colors.text, lineHeight: 22 },
+  stepperValue: {
+    fontFamily: type.mono.fontFamily,
+    color: colors.accent,
+    fontSize: 14,
+    minWidth: 60,
+    textAlign: 'center',
+  },
 });
 
 export default {
@@ -305,4 +437,7 @@ export default {
   StatRow,
   Divider,
   Screen,
+  NavRow,
+  ToggleRow,
+  StepperRow,
 };

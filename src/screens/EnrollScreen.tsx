@@ -20,6 +20,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  Vibration,
   View,
 } from 'react-native';
 
@@ -30,7 +31,8 @@ import type {
 } from '../components/CameraView';
 import { FillLightOverlay } from '../components/FillLightOverlay';
 import { FaceEngine } from '../services/FaceEngine';
-import { ScreenBrightness, LUX_DIM_THRESHOLD, LUX_BRIGHT_THRESHOLD } from '../services/ScreenBrightness';
+import { ScreenBrightness, LUX_DIM_THRESHOLD } from '../services/ScreenBrightness';
+import { PrefsStore, PREF_FILL_LIGHT_LUX, PREF_FILL_BRIGHTNESS, PREF_KEEP_AWAKE, PREF_ENROLL_VIBRATE, PREF_CAMERA_ZOOM } from '../services/PrefsStore';
 import type { BoundingBox } from '../services/FaceEngine';
 import { EmbeddingStore } from '../services/EmbeddingStore';
 import { Button, Field, Tag } from '../ui/components';
@@ -91,6 +93,35 @@ export function EnrollScreen({
   const embeddings = useRef<Float32Array[]>([]);
   const cameraRef = useRef<CameraViewHandle>(null);
 
+  // Prefs refs.
+  const luxThreshRef = useRef(LUX_DIM_THRESHOLD);
+  const brightRef = useRef(1.0);
+  const enrollVibrateRef = useRef(true);
+  const zoomRef = useRef(1.0);
+
+  // Load prefs on mount.
+  useEffect(() => {
+    Promise.all([
+      PrefsStore.getNumber(PREF_FILL_LIGHT_LUX, LUX_DIM_THRESHOLD),
+      PrefsStore.getNumber(PREF_FILL_BRIGHTNESS, 1.0),
+      PrefsStore.getBool(PREF_ENROLL_VIBRATE, true),
+      PrefsStore.getNumber(PREF_CAMERA_ZOOM, 1.0),
+    ]).then(([lux, bright, evib, zoom]) => {
+      luxThreshRef.current = lux;
+      brightRef.current = bright;
+      enrollVibrateRef.current = evib;
+      zoomRef.current = zoom;
+    });
+  }, []);
+
+  // Wake lock.
+  useEffect(() => {
+    PrefsStore.getBool(PREF_KEEP_AWAKE, true).then(on => {
+      if (on) void ScreenBrightness.acquireWakeLock();
+    });
+    return () => { void ScreenBrightness.releaseWakeLock(); };
+  }, []);
+
   // Lux polling — active only during capture phase; holds brightness until
   // ambient improves, session ends, or component unmounts.
   useEffect(() => {
@@ -98,11 +129,11 @@ export function EnrollScreen({
     const check = async () => {
       const lux = await ScreenBrightness.getLux();
       if (lux < 0) return;
-      if (lux < LUX_DIM_THRESHOLD && !lowLightActive.current) {
+      if (lux < luxThreshRef.current && !lowLightActive.current) {
         lowLightActive.current = true;
         setLowLight(true);
-        void ScreenBrightness.setBrightness(1);
-      } else if (lux >= LUX_BRIGHT_THRESHOLD && lowLightActive.current) {
+        void ScreenBrightness.setBrightness(brightRef.current);
+      } else if (lux >= (luxThreshRef.current + 13) && lowLightActive.current) {
         lowLightActive.current = false;
         setLowLight(false);
         void ScreenBrightness.restore();
@@ -177,6 +208,7 @@ export function EnrollScreen({
       embeddings.current.push(Float32Array.from(embedding));
       const next = embeddings.current.length;
       setCaptureIndex(next);
+      if (enrollVibrateRef.current) Vibration.vibrate(40);
       stableCount.current = 0;
       setStable(false);
       logger.info(TAG, `capture ${next}/${REQUIRED_CAPTURES}`);
@@ -279,6 +311,7 @@ export function EnrollScreen({
         onFaces={onFaces}
         bbox={bbox}
         isActive={phase === 'capturing'}
+        zoom={zoomRef.current}
       />
 
       {/* Fill-light overlay — white panels around the oval in low light. */}
