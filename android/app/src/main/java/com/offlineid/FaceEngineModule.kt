@@ -293,19 +293,6 @@ class FaceEngineModule(private val reactContext: ReactApplicationContext) :
                 val logits = outputs.use { (it[0].value as Array<FloatArray>)[0] }
                 val realScore = parseFasnetOutput(logits)
 
-                // DIAGNOSTIC (remove after liveness tuning): full class distribution
-                // so we can see which index is "real" for a genuine live face and
-                // whether the crop is sane. Filter logcat by tag "FaceEngine".
-                val sm = softmaxAll(logits)
-                Log.d(
-                    NAME,
-                    "liveness scale=$scaleF imgWxH=${bitmap.width}x${bitmap.height} " +
-                        "bbox=[${bbox[0]},${bbox[1]},${bbox[2]},${bbox[3]}] " +
-                        "logits=${logits.joinToString(",") { "%.3f".format(it) }} " +
-                        "softmax=${sm.joinToString(",") { "%.3f".format(it) }} " +
-                        "realIdx1=${"%.3f".format(realScore)}"
-                )
-
                 val result = Arguments.createMap().apply {
                     putBoolean("isLive", realScore > FASNET_THRESHOLD)
                     putDouble("score", realScore.toDouble())
