@@ -20,3 +20,11 @@ buildscript {
 }
 
 apply plugin: "com.facebook.react.rootproject"
+
+// Restrict all native builds to arm64-v8a to avoid armeabi-v7a CMake/ninja
+// build.ninja-dirty bug on Windows with CMake 3.22.
+subprojects {
+    plugins.withId("com.android.library") {
+        android.defaultConfig.ndk.abiFilters("arm64-v8a")
+    }
+}

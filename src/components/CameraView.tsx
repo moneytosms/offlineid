@@ -17,6 +17,7 @@
 
 import React, {
   forwardRef,
+  useCallback,
   useEffect,
   useImperativeHandle,
   useMemo,
@@ -129,10 +130,31 @@ function CameraViewInner(
   );
   const { detectFaces } = useFaceDetector(detectorOptions);
 
-  // `runOnJS` returns a JS-thread-callable proxy for the worklet (v1 API).
+  // Stable mutable ref — updated every render, never triggers worklet rebuild.
+  const onFacesRef = useRef<(faces: DetectedFace[]) => void>(noopFaces);
+  onFacesRef.current = onFaces ?? noopFaces;
+
+  // Stable JS-thread dispatcher — [] deps so it never recreates.
+  // Mapping happens here (JS thread), keeping the worklet allocation-free.
+  const stableDispatch = useCallback((rawFaces: any[]) => {
+    const out: DetectedFace[] = [];
+    for (let i = 0; i < rawFaces.length; i++) {
+      const f = rawFaces[i];
+      out.push({
+        leftEyeOpenProbability: f.leftEyeOpenProbability,
+        rightEyeOpenProbability: f.rightEyeOpenProbability,
+        headEulerAngleY: f.yawAngle,
+        smilingProbability: f.smilingProbability,
+        bounds: { x: f.bounds.x, y: f.bounds.y, w: f.bounds.width, h: f.bounds.height },
+      });
+    }
+    onFacesRef.current(out);
+  }, []); // intentionally []
+
+  // `runOnJS` wrapper — stable because stableDispatch never changes.
   const onFacesJS = useMemo(
-    () => Worklets.createRunOnJS(onFaces ?? noopFaces),
-    [onFaces],
+    () => Worklets.createRunOnJS(stableDispatch),
+    [stableDispatch],
   );
 
   useEffect(() => {
@@ -141,34 +163,14 @@ function CameraViewInner(
     }
   }, [hasPermission, requestPermission]);
 
+  // Minimal worklet: detect + dispatch only, no object creation.
+  // Both deps are stable so this worklet is never torn down mid-stream.
   const frameProcessor = useFrameProcessor(
     (frame: Frame) => {
       'worklet';
       frameCount.value += 1;
-
-      // Frame gate: forward only every Nth frame to JS (SPEC §6.4).
       if (frameCount.value % FRAME_GATE !== 0) return;
-
-      // Map detector faces inline — referencing a separate worklet here makes
-      // worklets-core emit malformed JS ("invalid empty parentheses").
-      const faces = detectFaces(frame);
-      const out: DetectedFace[] = [];
-      for (let i = 0; i < faces.length; i++) {
-        const f = faces[i];
-        out.push({
-          leftEyeOpenProbability: f.leftEyeOpenProbability,
-          rightEyeOpenProbability: f.rightEyeOpenProbability,
-          headEulerAngleY: f.yawAngle,
-          smilingProbability: f.smilingProbability,
-          bounds: {
-            x: f.bounds.x,
-            y: f.bounds.y,
-            w: f.bounds.width,
-            h: f.bounds.height,
-          },
-        });
-      }
-      onFacesJS(out);
+      onFacesJS(detectFaces(frame));
     },
     [onFacesJS, detectFaces],
   );
