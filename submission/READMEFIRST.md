@@ -18,7 +18,7 @@ on-device in about 51 ms on a host CPU.
 ## Evaluator path (about 60 seconds)
 
 1. Read this page for orientation.
-2. Open **`OfflineID_Hackathon7.pptx`**, the 16-slide deck, for the full story.
+2. Open **`OfflineID_Hackathon7.pptx`**, the 21-slide deck, for the full story.
 3. Skim **`01-PROPOSAL.md`** for the solution mapped to the four scoring criteria.
 4. Install the **offline APK** from the GitHub Release and try it in airplane mode.
 
@@ -32,6 +32,7 @@ on-device in about 51 ms on a host CPU.
 | File | What it is |
 |---|---|
 | `READMEFIRST.md` / `.pdf` | This orientation page, start here. |
+| `FEATURES.md` | Complete feature list for v1.3.0. |
 | `OfflineID_Hackathon7.pptx` | The presentation, a 16-slide themed deck (mandatory deliverable). |
 | `01-PROPOSAL.md` | Solution overview mapped to Innovation / Feasibility / Scalability / Presentation. |
 | `02-DATALAKE-3.0-INTEGRATION.md` | Exact steps to drop OfflineID into the Datalake 3.0 app, including the iOS engine. |
@@ -71,7 +72,7 @@ on-device in about 51 ms on a host CPU.
 - **Screen Wake-Lock** — app prevents device sleep during scanning process
 - **Adjustable Zoom** — camera zoom is now configurable and persistent
 - **Brand identity** — custom app icon and in-app brand logo (About screen)
-- **arm64-v8a only build** — eliminates armeabi-v7a CMake/ninja build issues on Windows; APK ~59 MB
+- **arm64-v8a only build** — eliminates armeabi-v7a CMake/ninja build issues on Windows; APK ~62 MB
 
 ---
 

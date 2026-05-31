@@ -64,19 +64,20 @@ offlineid/
 │   ├── export_fasnet.py             ← export FASNet liveness model to ONNX
 │   └── validate_models.py           ← smoke-test all three ONNX models
 │
-├── models/                          ← compiled ONNX model files (gitignored, DVC)
-│   ├── scrfd_500m_fixed.onnx        ← face detector   (~1 MB)
-│   ├── mobilefacenet_int8.onnx      ← face recogniser (~4 MB)
-│   └── fasnet_anti_spoof.onnx       ← liveness model  (~1.2 MB)
+├── models/                          ← compiled ONNX model files (gitignored)
+│   ├── scrfd_500m_fixed.onnx        ← face detector        (2.41 MB)
+│   ├── mobilefacenet_int8.onnx      ← face recogniser INT8 (3.35 MB)
+│   ├── fasnet_2_7.onnx              ← liveness scale 2.7   (1.66 MB)
+│   └── fasnet_4_0.onnx              ← liveness scale 4.0   (1.66 MB)
 │
+├── android/app/src/main/java/com/offlineid/
+│   ├── FaceEngineModule.kt          ← ONNX Runtime Android bridge (4 sessions)
+│   └── FaceEnginePackage.kt         ← RN package registration
+├── ios/FaceEngine/
+│   ├── FaceEngine.swift             ← ONNX Runtime iOS bridge (Swift)
+│   ├── RGBAImage.swift              ← pixel buffer helpers
+│   └── FaceEngine.m                 ← ObjC bridge header
 ├── src/
-│   ├── native/                      ← native modules (Kotlin + Swift)
-│   │   ├── android/
-│   │   │   ├── FaceEngineModule.kt  ← ONNX Runtime Android bridge
-│   │   │   └── FaceEnginePackage.kt
-│   │   └── ios/
-│   │       ├── FaceEngine.swift
-│   │       └── FaceEngineModule.m   ← ObjC bridge header
 │   │
 │   ├── services/
 │   │   ├── FaceEngine.ts            ← JS wrapper for native module
@@ -125,8 +126,7 @@ offlineid/
 | ONNX file | `scrfd_500m_fixed.onnx` |
 | Input | `1 × 3 × 640 × 640` (or dynamic shape), RGB, normalised |
 | Output | bounding boxes + 5 facial keypoints (landmarks) |
-| Size (float32) | ~2.4 MB |
-| Size after simplification | ~1 MB |
+| Size | 2.41 MB |
 | Inference time (CPU, Cortex-A76) | ~15–25 ms |
 | License | MIT (InsightFace open model) |
 
@@ -152,7 +152,7 @@ right mouth corner) required for ArcFace alignment in a single forward pass.
 | Input | `1 × 3 × 112 × 112`, RGB, normalised [mean=(0.5,0.5,0.5), std=(0.5,0.5,0.5)] |
 | Output | `1 × 512` float32 embedding |
 | Size (float32) | ~4 MB |
-| Size (INT8 quantised) | ~1.1 MB |
+| Size (INT8 quantised) | 3.35 MB |
 | LFW accuracy (float32) | 99.55 % |
 | LFW accuracy (INT8) | 99.53 % (< 0.02 % drop) |
 | Inference time (CPU, Cortex-A76) | ~18–25 ms |
@@ -189,11 +189,11 @@ This alignment MUST be replicated in the native module. See `MODEL_PIPELINE.md �
 | Property | Value |
 |---|---|
 | Source | `minivision-ai/Silent-Face-Anti-Spoofing` |
-| ONNX file | `fasnet_anti_spoof.onnx` |
-| Input | Two crops at scales 2.7 and 4.0 of the face bounding box |
-| Output | `[real_score, fake_score]` - take softmax, threshold real_score > 0.6 |
-| Size | ~1.2 MB (MiniFASNet-v2) |
-| Inference time | ~20 ms per scale call |
+| ONNX files | `fasnet_2_7.onnx` (MiniFASNetV2) · `fasnet_4_0.onnx` (MiniFASNetV1SE) |
+| Input | `1×3×80×80`, BGR, mean=[0.406,0.456,0.485], std=[0.225,0.224,0.229] |
+| Output | 3-class logits; softmax[2] = P(real); threshold > 0.6 |
+| Size each | 1.66 MB (3.32 MB combined) |
+| Inference time | ~1.5 ms per call (both scales ≈ 3 ms) |
 | License | MIT |
 
 **Passive liveness (FASNet) detects:**
@@ -218,14 +218,15 @@ This alignment MUST be replicated in the native module. See `MODEL_PIPELINE.md �
 
 | Component | Size |
 |---|---|
-| SCRFD-500M (detector) | ~1.0 MB |
-| MobileFaceNet INT8 (recogniser) | ~1.1 MB |
-| FASNet (liveness) | ~1.2 MB |
+| SCRFD-500M (detector) | 2.41 MB |
+| MobileFaceNet INT8 (recogniser) | 3.35 MB |
+| FASNet-2.7 (MiniFASNetV2) | 1.66 MB |
+| FASNet-4.0 (MiniFASNetV1SE) | 1.66 MB |
+| **Total model bundle** | **9.09 MB** |
 | ONNX Runtime Mobile (Android AAR) | ~3.5 MB |
-| ONNX Runtime Mobile (iOS pod) | ~3.5 MB |
-| **Total add to Datalake app** | **≈ 10–11 MB** |
+| **Total add to Datalake app** | **≈ 12.6 MB** |
 
-> ✅ Safely under the 20 MB cap. Leave ~8 MB headroom for future model updates.
+> ✅ Safely under the 20 MB cap. ~8 MB headroom for future model updates.
 
 ---
 
@@ -320,11 +321,11 @@ export interface IFaceEngineNative {
 
 ### 6.2 Android Native Module (Kotlin)
 
-**File:** `src/native/android/FaceEngineModule.kt`
+**File:** `android/app/src/main/java/com/offlineid/FaceEngineModule.kt`
 
 ```kotlin
 // Key responsibilities:
-// 1. Load all three ONNX models from assets/ on initModels()
+// 1. Load all four ONNX models from assets/ on initModels()
 // 2. Decode base64 → Bitmap → YUV/RGB ByteArray as needed
 // 3. Run SCRFD inference via OrtSession
 // 4. Run FASNet inference (two scales)

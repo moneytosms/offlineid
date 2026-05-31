@@ -56,12 +56,13 @@
 ```
 android/app/src/main/
 ├── java/com/offlineid/
-│   ├── FaceEngineModule.kt        ← main module
+│   ├── FaceEngineModule.kt        ← main module (4 ONNX sessions)
 │   └── FaceEnginePackage.kt       ← RN registration
 └── assets/
     ├── scrfd_500m_fixed.onnx
     ├── mobilefacenet_int8.onnx
-    └── fasnet_anti_spoof.onnx
+    ├── fasnet_2_7.onnx            ← MiniFASNetV2 (scale 2.7)
+    └── fasnet_4_0.onnx            ← MiniFASNetV1SE (scale 4.0)
 ```
 
 **Threading model:**
@@ -84,12 +85,14 @@ opts.addXnnpack(mapOf())  // always add XNNPACK as CPU accelerator
 ### 2.2 iOS (Swift) - FaceEngineModule
 
 ```
-ios/OfflineID/
-├── FaceEngine.swift          ← main module
-├── FaceEngineModule.m              ← ObjC bridge header (required for RN)
+ios/FaceEngine/
+├── FaceEngine.swift          ← main module (4 ONNX sessions)
+├── RGBAImage.swift           ← pixel buffer helpers
+├── FaceEngine.m              ← ObjC bridge header (required for RN)
 ├── scrfd_500m_fixed.onnx
 ├── mobilefacenet_int8.onnx
-└── fasnet_anti_spoof.onnx
+├── fasnet_2_7.onnx
+└── fasnet_4_0.onnx
 ```
 
 **CoreML execution provider:**
@@ -102,7 +105,7 @@ try coreMLOptions.appendCoreMLExecutionProvider(
 ```
 
 **Memory management:**
-- `OrtEnv` and all three `OrtSession` objects are stored as class properties
+- `OrtEnv` and all four `OrtSession` objects are stored as class properties
 - `initModels()` is called from `AppDelegate` to pre-warm on launch
 - `releaseModels()` is called in `applicationDidEnterBackground` to free memory
 

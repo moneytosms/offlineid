@@ -20,11 +20,12 @@ field (your GitHub repo / Google Drive).
 | File | Purpose | Maps to deliverable |
 |---|---|---|
 | `READMEFIRST.md` / `.pdf` | Start-here orientation: what this is + what each doc is | - |
+| `FEATURES.md` | Complete feature list for v1.3.0 | - |
 | `README.md` | This index + how to submit | - |
 | `01-PROPOSAL.md` | Solution overview: problem → approach → why it wins | Presentation |
 | `02-DATALAKE-3.0-INTEGRATION.md` | **Exact steps to drop OfflineID into Datalake 3.0** | Feasibility / Integration steps |
 | `03-BUILD-OFFLINE-APK.md` | Build the standalone **offline** release APK (not debug/Metro) | Working Prototype |
-| `OfflineID_Hackathon7.pptx` | **Ready-to-present 16-slide deck** (themed) | **Presentation (mandatory)** |
+| `OfflineID_Hackathon7.pptx` | **Ready-to-present 21-slide deck** (themed) | **Presentation (mandatory)** |
 | `PRESENTATION.md` | Slide outline / speaker notes behind the deck | Presentation |
 | `docs/ARCHITECTURE.md` | System + data-flow architecture | Technical Documentation |
 | `docs/MODEL_PIPELINE.md` | AI pipeline + model details | Technical Documentation |
