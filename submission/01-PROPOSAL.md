@@ -60,7 +60,7 @@ lockout after repeated failures.
 ## Current status
 
 - **Android**: complete working prototype, standalone **offline release APK** (arm64-v8a,
-  ~59 MB), full pipeline verified on real hardware. Tested on multiple devices.
+  ~62 MB), full pipeline verified on real hardware. Tested on multiple devices.
 - **iOS**: shares the entire RN/JS + UI layer; the native ONNX engine is **written in
   Swift** (`ios/FaceEngine/`, `FaceEngine.swift`, `RGBAImage.swift`, `FaceEngine.m`),
   a 1:1 port of the Kotlin engine with identical models, channel order, and ArcFace math.
