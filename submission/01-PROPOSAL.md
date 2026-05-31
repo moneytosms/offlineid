@@ -79,7 +79,7 @@ offline attendance log → reconnect + sync.
 
 ## Deliverable artifacts
 
-- **Offline release APK:** `OfflineID-release.apk` (arm64-v8a, standalone, runs airplane-mode).
+- **Offline release APK:** `OfflineID-v1.3.0-arm64-v8a.apk` (arm64-v8a, standalone, runs airplane-mode).
   Built via `android/ && ./gradlew assembleRelease`. **Too large for the 25 MB proposal zip**,
   so ship it through the form's **"Link for the proposal"** slot (attach to a GitHub Release
   or Drive). See `03-BUILD-OFFLINE-APK.md`.
