@@ -82,8 +82,8 @@ android {
         applicationId "com.offlineid"
         minSdkVersion 26  // Android 8.0 — OfflineID requires NNAPI
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        versionCode 2
+        versionName "1.1.0"
     }
     androidResources {
         noCompress += ["onnx"]  // do not compress bundled ONNX model assets
