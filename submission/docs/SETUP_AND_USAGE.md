@@ -153,10 +153,10 @@ The release build embeds the JS bundle and runs with no Metro and no network.
 cd android
 .\gradlew.bat assembleRelease -PreactNativeArchitectures=arm64-v8a
 cd ..
-adb install -r android\app\build\outputs\apk\release\app-arm64-v8a-release.apk
+adb install -r android\app\build\outputs\apk\release\app-release.apk
 ```
 
-Output: `app-arm64-v8a-release.apk` (~58 MB). The `arm64-v8a` ABI split keeps the APK small;
+Output: `app-release.apk` (~62 MB). The `arm64-v8a` ABI filter keeps the APK small;
 a universal build bundles four ABIs of ONNX Runtime + ML Kit and balloons to ~167 MB. arm64
 covers effectively every field device since 2017. For an x86_64 emulator pass
 `-PreactNativeArchitectures=x86_64`.
@@ -214,8 +214,11 @@ Five tabs (bottom bar): **Scan · Enrol · People · Sync · System**.
 - Flow: pull ≤ 10 pending → request presigned URLs → PUT each to S3 → confirm → **delete locally** (purge).
 - The header badge shows the unsynced count.
 
-### 6.5 System
-- Device info, model + matching thresholds, factory reset, and the in-app About explainer.
+### 6.5 System / Settings
+- **Display** subview: fill-light brightness, ambient lux threshold (default 22 activation / 35 deactivation), screen wake-lock, camera zoom level.
+- **Technical** subview: model + matching thresholds, haptic feedback toggle, auto-restart on result.
+- **Help** subview: gesture explainers (blink / smile / turn), tips for best results, data privacy info.
+- Device info, factory reset, and the in-app About screen are also accessible from System.
 
 > Set your sync backend base URL in `src/config.ts` (`SYNC_BASE_URL`).
 
@@ -252,7 +255,7 @@ npx tsc --noEmit    # TypeScript typecheck, must be clean
 |---|---|
 | `tsc --noEmit` | clean |
 | `npm test` | 15/15 |
-| `gradlew assembleRelease` | arm64-v8a APK produced (~58 MB) |
+| `gradlew assembleRelease` | arm64-v8a APK produced (~62 MB) |
 | Models bundled | 4 ONNX in `android/app/src/main/assets/` (9.1 MB) |
 | On-device run | enroll + authenticate verified offline on Android hardware |
 
