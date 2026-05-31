@@ -58,17 +58,19 @@ on-device in about 51 ms on a host CPU.
 | Offline liveness (blink/smile/turn) | Passive FASNet anti-spoof plus active gesture sequence. |
 | Sync & purge to AWS | Presigned-S3 batch upload, then local purge. |
 | Open-source only | MIT / Apache stack, full source shared. |
-| Low-light operation | Ambient light sensor (TYPE_LIGHT) activates fill-light overlay at < 120 lux; screen brightness maximised to illuminate face. |
+| Low-light operation | Ambient light sensor (TYPE_LIGHT) activates fill-light overlay at < 22 lux (configurable); screen brightness maximised to illuminate face. |
 
 ---
 
-## What's new in v1.2.0
+## What's new in v1.3.0
 
+- **Configurable Preferences** — users can now customize lux threshold, fill-light brightness, haptic feedback, and auto-restart behavior
+- **Restructured Settings** — intuitive subviews (Display, Technical, Help) for better organization
+- **In-App Help Guide** — gesture explainers, tips for best results, and data privacy info built directly into the app
+- **Low-light sensitivity** — lux threshold lowered to 22 (activation) / 35 (deactivation) for better performance in dark environments
+- **Screen Wake-Lock** — app prevents device sleep during scanning process
+- **Adjustable Zoom** — camera zoom is now configurable and persistent
 - **Brand identity** — custom app icon and in-app brand logo (About screen)
-- **Ambient light sensor** — uses Android `TYPE_LIGHT` sensor to measure actual lux instead of heuristic no-face counting
-- **Smarter fill-light** — activates at 120 lux (dim room), holds brightness until ambient recovers to 180 lux; not dropped on first face detection
-- **White fill-light panels** — four white overlay panels frame the face oval, using the screen as a ring-light without obscuring the viewfinder
-- **Crash fixes** — VisionCamera frame processor simplified to bare minimum (no object allocation in worklet); stable dispatch via ref prevents worklet teardown mid-stream
 - **arm64-v8a only build** — eliminates armeabi-v7a CMake/ninja build issues on Windows; APK ~59 MB
 
 ---

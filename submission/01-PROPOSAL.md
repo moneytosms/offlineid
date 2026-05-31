@@ -70,9 +70,7 @@ lockout after repeated failures.
 - **Accuracy/demographics**: MobileFaceNet (LFW 99.5%) + inference-time lighting normalisation
   + ambient-light-triggered fill-light for low-light scenarios; on-device fine-tune on an
   Indian face subset is the field-hardening roadmap.
-- **Low-light handling**: Android `TYPE_LIGHT` sensor measures ambient lux; below 120 lux
-  the app maximises screen brightness and overlays white fill-light panels around the face
-  oval to illuminate the subject without any external hardware.
+- **Low-light handling**: Android `TYPE_LIGHT` sensor measures ambient lux; below 22 lux (configurable) the app maximises screen brightness and overlays white fill-light panels around the face oval to illuminate the subject without any external hardware.
 
 ## Demo video
 

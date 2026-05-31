@@ -96,7 +96,7 @@ Name · Email (+verify) · Mobile · Team Leader name · Team Size · Captcha, f
 | Model footprint ~20 MB | ✅ **9.1 MB** total model bundle |
 | < 1 s recognise + liveness | ✅ ~51 ms host-CPU pipeline; sub-second on mid-range ARM |
 | Android 8+ / iOS 12+, 3 GB RAM, no high-end GPU | ✅ CPU-only ONNX Runtime (XNNPACK/NNAPI) |
-| > 95 % accuracy, Indian demographics, varied lighting | MobileFaceNet (LFW 99.5%) + inference-time normalisation + ambient-lux fill-light overlay (activates < 120 lux via TYPE_LIGHT sensor); field fine-tune = roadmap |
+| > 95 % accuracy, Indian demographics, varied lighting | MobileFaceNet (LFW 99.5%) + inference-time normalisation + ambient-lux fill-light overlay (activates < 22 lux via TYPE_LIGHT sensor, configurable); field fine-tune = roadmap |
 | Open-source only, share source | ✅ MIT-licensed stack, full source in repo |
 | Offline liveness (blink/smile/turn) | ✅ passive FASNet + active gesture sequence |
 | Sync & purge to AWS after reconnect | ✅ presigned-S3 batch sync + local purge |

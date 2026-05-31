@@ -13,7 +13,7 @@
 import appConfig from '../app.json';
 
 /** App version surfaced in Settings / About. */
-export const APP_VERSION = '1.2.0';
+export const APP_VERSION = '1.3.0';
 
 /** Placeholder backend — offline auth works; real upload requires a live URL. */
 const DEFAULT_SYNC_BASE_URL = 'https://api.datalake.example.com';
