@@ -60,15 +60,19 @@ lockout after repeated failures.
 ## Current status
 
 - **Android**: complete working prototype, standalone **offline release APK** (arm64-v8a,
-  ~58 MB), full pipeline verified on real hardware.
-- **iOS**: shares the entire RN/JS + UI layer; the native ONNX engine is now **written in
+  ~59 MB), full pipeline verified on real hardware. Tested on multiple devices.
+- **iOS**: shares the entire RN/JS + UI layer; the native ONNX engine is **written in
   Swift** (`ios/FaceEngine/`, `FaceEngine.swift`, `RGBAImage.swift`, `FaceEngine.m`),
   a 1:1 port of the Kotlin engine with identical models, channel order, and ArcFace math.
   Remaining work is the Xcode build wiring (Podfile + bundle resources + bridging header,
   documented in `ios/FaceEngine/README.md`), which needs a Mac. Android is the
   build-and-run-verified prototype for this submission.
-- **Accuracy/demographics**: backbone (MobileFaceNet, LFW 99.5%) + lighting normalisation
-  today; on-device fine-tune on an Indian face subset is the field-hardening roadmap.
+- **Accuracy/demographics**: MobileFaceNet (LFW 99.5%) + inference-time lighting normalisation
+  + ambient-light-triggered fill-light for low-light scenarios; on-device fine-tune on an
+  Indian face subset is the field-hardening roadmap.
+- **Low-light handling**: Android `TYPE_LIGHT` sensor measures ambient lux; below 120 lux
+  the app maximises screen brightness and overlays white fill-light panels around the face
+  oval to illuminate the subject without any external hardware.
 
 ## Demo video
 
@@ -86,5 +90,5 @@ offline attendance log → reconnect + sync.
 ## Links
 
 - **Source code (open-source):** https://github.com/moneytosms/offlineid
-- **Offline release APK (v1.1.0):** https://github.com/moneytosms/offlineid/releases/tag/v1.1.0
+- **Offline release APK (v1.2.0):** https://github.com/moneytosms/offlineid/releases/tag/v1.2.0
 - **Demo video:** ➡️ [ADD YOUR DEMO VIDEO LINK]

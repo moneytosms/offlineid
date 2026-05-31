@@ -82,8 +82,8 @@ android {
         applicationId "com.offlineid"
         minSdkVersion 26  // Android 8.0 — OfflineID requires NNAPI
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 2
-        versionName "1.1.0"
+        versionCode 3
+        versionName "1.2.0"
         ndk {
             abiFilters "arm64-v8a"
         }

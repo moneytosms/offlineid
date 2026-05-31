@@ -1,21 +1,25 @@
 /**
  * About / documentation view.
  *
- * In-app explainer of what OfflineID is, how the offline pipeline works, its
- * feature set, and the open-source stack — so an evaluator can understand the
- * product without leaving the app.
- *
  * @module screens/AboutScreen
  */
 
 import React from 'react';
-import {ScrollView, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
+import {
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 
 import {Card, Label, Tag} from '../ui/components';
 import {colors, MONO, space, type as typo} from '../ui/theme';
 import {APP_VERSION} from '../config';
 
-/** A numbered pipeline step. */
+const BrandLogo = require('../assets/brand_logo.png') as number;
+
 function Step({
   n,
   title,
@@ -36,23 +40,19 @@ function Step({
   );
 }
 
-/** Feature / capability row (always affirmative). */
 function Feature({text}: {text: string}): React.JSX.Element {
   return (
-    <View style={styles.spoofRow}>
-      <Text style={[styles.spoofMark, {color: colors.accent}]}>✓</Text>
-      <Text style={styles.spoofText}>{text}</Text>
+    <View style={styles.featureRow}>
+      <Text style={[styles.featureMark, {color: colors.accent}]}>✓</Text>
+      <Text style={styles.featureText}>{text}</Text>
     </View>
   );
 }
 
-/** {@link AboutScreen} props. */
 export interface AboutScreenProps {
-  /** Return to Settings. */
   onBack: () => void;
 }
 
-/** Read-only product explainer. */
 export function AboutScreen({onBack}: AboutScreenProps): React.JSX.Element {
   return (
     <ScrollView
@@ -66,69 +66,99 @@ export function AboutScreen({onBack}: AboutScreenProps): React.JSX.Element {
         <Text style={styles.backText}>‹  System</Text>
       </TouchableOpacity>
 
-      <Text style={styles.hero}>OFFLINE·ID</Text>
-      <Text style={styles.tagline}>
-        Secure offline facial recognition + liveness for field personnel in
-        zero-network zones.
-      </Text>
+      {/* Brand logo */}
+      <View style={styles.logoWrap}>
+        <Image
+          source={BrandLogo}
+          style={styles.logo}
+          resizeMode="contain"
+          accessibilityLabel="OfflineID logo"
+        />
+      </View>
+
       <View style={styles.heroTags}>
         <Tag tone="accent">100% ON-DEVICE</Tag>
         <Tag tone="muted">{`v${APP_VERSION}`}</Tag>
       </View>
+
+      <Text style={styles.tagline}>
+        Secure offline facial recognition + liveness detection for field
+        personnel in zero-network zones. No internet. No cloud. No compromise.
+      </Text>
 
       <Label style={styles.section}>How it works</Label>
       <Card style={styles.card}>
         <Step
           n="1"
           title="Detect"
-          body="SCRFD-500M finds the face and 5 keypoints in the camera still."
+          body="SCRFD-500M locates the face and 5 keypoints from a camera still."
         />
         <Step
           n="2"
           title="Align & embed"
-          body="The face is aligned (ArcFace) and MobileFaceNet turns it into a 512-number faceprint."
+          body="ArcFace alignment normalises the crop; MobileFaceNet INT8 produces a 512-d faceprint in ~51 ms."
         />
         <Step
           n="3"
-          title="Prove liveness"
-          body="FASNet checks for a real face, then a random gesture sequence (blink / smile / turn) defeats photos."
+          title="Passive liveness"
+          body="FASNet (scales 2.7× + 4.0×) rejects printed photos and screen replays before any recognition runs."
         />
         <Step
           n="4"
-          title="Match & log"
-          body="Cosine similarity against enrolled faceprints; a match writes an attendance record."
+          title="Active gesture"
+          body="A randomised blink / smile / turn sequence from ML Kit defeats video replays and deepfakes."
         />
         <Step
           n="5"
+          title="Match & log"
+          body="Cosine similarity against AES-256-GCM encrypted faceprints; a match writes a local attendance record."
+        />
+        <Step
+          n="6"
           title="Sync & purge"
-          body="When the network returns, records upload to AWS S3 and are erased locally."
+          body="When the network returns, records upload via presigned S3 URLs then are erased locally."
         />
       </Card>
 
       <Label style={styles.section}>Features</Label>
       <Card style={styles.card}>
-        <Feature text="Fully offline — recognition + liveness run on-device, zero network" />
-        <Feature text="Dual-layer liveness: passive FASNet anti-spoof + active gestures" />
-        <Feature text="Randomised gesture challenge (blink · smile · turn) defeats photos & screens" />
+        <Feature text="Fully offline — all inference on-device, zero network dependency" />
+        <Feature text="Dual-layer liveness: passive FASNet anti-spoof + randomised active gesture" />
+        <Feature text="Ambient light sensor (TYPE_LIGHT) triggers fill-light overlay in dim conditions" />
+        <Feature text="White fill-light panels around face oval illuminate subject using the screen" />
+        <Feature text="Brightness held until ambient lux recovers — not dropped on first face detection" />
         <Feature text="Sub-second recognition on mid-range CPUs, no GPU required" />
-        <Feature text="AES-256-GCM encrypted faceprints; raw images never stored" />
-        <Feature text="Offline attendance queue with automatic AWS S3 sync & local purge" />
+        <Feature text="AES-256-GCM encrypted faceprints at rest; raw images never stored" />
+        <Feature text="Offline attendance queue with automatic AWS S3 sync and local purge" />
+        <Feature text="30-second lockout after repeated failed authentication attempts" />
         <Feature text="Cross-platform React Native, ready for Datalake 3.0 integration" />
       </Card>
 
-      <Label style={styles.section}>Built with (open-source)</Label>
+      <Label style={styles.section}>AI models (open-source ONNX)</Label>
       <Card style={styles.card}>
         <Text style={styles.stack}>
-          React Native · ONNX Runtime · SCRFD · MobileFaceNet · Silent-Face
-          FASNet · VisionCamera · ML Kit · SQLite · @noble/ciphers (AES-256-GCM)
+          SCRFD-500M (face detect + 5 landmarks) · MobileFaceNet INT8 (512-d
+          embedding) · Silent-Face FASNet (passive liveness, 2 scales) · ML Kit
+          Face Detector (active gesture stream)
         </Text>
         <Text style={styles.note}>
-          Targets Android 8+ / iOS 12+, 3 GB RAM, no GPU. Models total ≈ 9 MB,
-          inside the 20 MB budget — &gt; 95% recognition accuracy.
+          9.1 MB total · CPU-only ONNX Runtime (XNNPACK / NNAPI) · Android 8+ /
+          iOS 12+ · 3 GB RAM · no GPU required · &gt; 95% recognition accuracy
         </Text>
       </Card>
 
-      <Text style={styles.footer}>OfflineID · Hackathon 7.0 prototype</Text>
+      <Label style={styles.section}>Open-source stack</Label>
+      <Card style={styles.card}>
+        <Text style={styles.stack}>
+          React Native · ONNX Runtime Mobile · VisionCamera v4 ·
+          react-native-vision-camera-face-detector · @noble/ciphers
+          (AES-256-GCM) · SQLite · react-native-worklets-core
+        </Text>
+      </Card>
+
+      <Text style={styles.footer}>
+        OfflineID · Hackathon 7.0 · MIT licence
+      </Text>
     </ScrollView>
   );
 }
@@ -138,11 +168,20 @@ const styles = StyleSheet.create({
   content: {padding: space.xl, paddingBottom: space.xxxl},
   back: {marginBottom: space.lg},
   backText: {color: colors.accent, fontSize: 15, fontWeight: '700'},
-  hero: {fontSize: 30, fontWeight: '900', letterSpacing: 5, color: colors.text},
-  tagline: {...typo.body, color: colors.textDim, marginTop: space.md, lineHeight: 22},
-  heroTags: {flexDirection: 'row', gap: space.sm, marginTop: space.lg},
+
+  logoWrap: {alignItems: 'center', marginBottom: space.lg},
+  logo: {width: 200, height: 200},
+
+  tagline: {
+    ...typo.body,
+    color: colors.textDim,
+    marginTop: space.md,
+    lineHeight: 22,
+  },
+  heroTags: {flexDirection: 'row', gap: space.sm},
   section: {marginTop: space.xl, marginBottom: space.sm},
   card: {gap: space.md},
+
   step: {flexDirection: 'row', gap: space.md},
   stepNum: {
     color: colors.accent,
@@ -154,11 +193,29 @@ const styles = StyleSheet.create({
   stepBody: {flex: 1},
   stepTitle: {...typo.heading, fontSize: 15},
   stepText: {...typo.muted, marginTop: 2, lineHeight: 19},
-  spoofRow: {flexDirection: 'row', alignItems: 'flex-start', gap: space.md},
-  spoofMark: {fontSize: 15, fontWeight: '800', width: 16},
-  spoofText: {...typo.body, flex: 1, fontSize: 14, color: colors.textDim},
-  note: {...typo.muted, fontSize: 12, lineHeight: 18, color: colors.textFaint},
-  stack: {...typo.body, fontSize: 14, color: colors.textDim, lineHeight: 22},
+
+  featureRow: {flexDirection: 'row', alignItems: 'flex-start', gap: space.md},
+  featureMark: {fontSize: 15, fontWeight: '800', width: 16},
+  featureText: {
+    ...typo.body,
+    flex: 1,
+    fontSize: 14,
+    color: colors.textDim,
+  },
+
+  stack: {
+    ...typo.body,
+    fontSize: 14,
+    color: colors.textDim,
+    lineHeight: 22,
+  },
+  note: {
+    ...typo.muted,
+    fontSize: 12,
+    lineHeight: 18,
+    color: colors.textFaint,
+    marginTop: space.xs,
+  },
   footer: {
     textAlign: 'center',
     color: colors.textFaint,
