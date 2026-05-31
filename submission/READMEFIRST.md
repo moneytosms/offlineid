@@ -23,7 +23,7 @@ on-device in about 51 ms on a host CPU.
 4. Install the **offline APK** from the GitHub Release and try it in airplane mode.
 
 - **Source code:** https://github.com/moneytosms/offlineid
-- **Offline release APK (v1.2.0):** https://github.com/moneytosms/offlineid/releases/tag/v1.2.0
+- **Offline release APK (v1.3.0):** https://github.com/moneytosms/offlineid/releases/tag/v1.3.0
 
 ---
 

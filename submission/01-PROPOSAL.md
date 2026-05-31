@@ -88,5 +88,5 @@ offline attendance log → reconnect + sync.
 ## Links
 
 - **Source code (open-source):** https://github.com/moneytosms/offlineid
-- **Offline release APK (v1.2.0):** https://github.com/moneytosms/offlineid/releases/tag/v1.2.0
+- **Offline release APK (v1.3.0):** https://github.com/moneytosms/offlineid/releases/tag/v1.3.0
 - **Demo video:** ➡️ [ADD YOUR DEMO VIDEO LINK]
