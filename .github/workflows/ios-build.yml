@@ -1,0 +1,50 @@
+name: iOS Build
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+jobs:
+  build-ios:
+    runs-on: macos-14
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install npm dependencies
+        run: npm install --legacy-peer-deps
+
+      - name: Install CocoaPods dependencies
+        run: pod install
+        working-directory: ios
+
+      - name: Build OfflineID for iOS simulator
+        run: |
+          xcodebuild \
+            -workspace ios/OfflineID.xcworkspace \
+            -scheme OfflineID \
+            -configuration Release \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath build/DerivedData \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
+      - name: Upload built app
+        uses: actions/upload-artifact@v4
+        with:
+          name: OfflineID-ios-simulator-app
+          path: build/DerivedData/Build/Products/Release-iphonesimulator/OfflineID.app
+          if-no-files-found: error
