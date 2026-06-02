@@ -42,6 +42,7 @@ import {
 } from '../services/LivenessService';
 import {EmbeddingStore} from '../services/EmbeddingStore';
 import {AttendanceStore} from '../services/AttendanceStore';
+import type {AttendanceLogRow} from '../db/schema';
 import {
   PrefsStore,
   PREF_FILL_LIGHT_LUX,
@@ -58,7 +59,7 @@ import {logger} from '../utils/logger';
 
 const TAG = 'Settings';
 
-type Subview = 'main' | 'display' | 'technical' | 'help';
+type Subview = 'main' | 'display' | 'technical' | 'help' | 'logs';
 
 const AUTO_RESTART_VALUES = [-1, 3, 5, 10] as const;
 
@@ -75,6 +76,7 @@ export function SettingsScreen({
 }: SettingsScreenProps): React.JSX.Element {
   const [subview, setSubview] = useState<Subview>('main');
   const [counts, setCounts] = useState({people: 0, pending: 0});
+  const [logs, setLogs] = useState<AttendanceLogRow[]>([]);
 
   // Display prefs
   const [fillLux, setFillLux] = useState(LUX_DIM_THRESHOLD);
@@ -97,6 +99,15 @@ export function SettingsScreen({
       setCounts({people, pending});
     } catch (err) {
       logger.error(TAG, 'load counts failed', err);
+    }
+  }, []);
+
+  const loadLogs = useCallback(async (): Promise<void> => {
+    try {
+      const rows = await AttendanceStore.getRecentEvents(50);
+      setLogs(rows);
+    } catch (err) {
+      logger.error(TAG, 'loadLogs failed', err);
     }
   }, []);
 
@@ -126,6 +137,11 @@ export function SettingsScreen({
     void load();
     void loadPrefs();
   }, [load, loadPrefs]);
+
+  // Refresh logs when the logs subview is opened.
+  useEffect(() => {
+    if (subview === 'logs') void loadLogs();
+  }, [subview, loadLogs]);
 
   // ── Factory reset ─────────────────────────────────────────────────────────
 
@@ -227,6 +243,11 @@ export function SettingsScreen({
             onPress={() => setSubview('display')}
           />
           <NavRow
+            title="Transaction logs"
+            subtitle="Recent attendance and auth events"
+            onPress={() => setSubview('logs')}
+          />
+          <NavRow
             title="Help / How to use"
             subtitle="Gestures, tips, and what to expect"
             onPress={() => setSubview('help')}
@@ -243,6 +264,68 @@ export function SettingsScreen({
           <Button label="Factory reset" variant="danger" onPress={factoryReset} />
         </View>
       </Screen>
+    );
+  }
+
+  // ── Subview: logs ─────────────────────────────────────────────────────────
+
+  if (subview === 'logs') {
+    return (
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.scrollContent}>
+        <TouchableOpacity
+          onPress={() => setSubview('main')}
+          style={styles.backBtn}
+          accessibilityRole="button"
+          accessibilityLabel="Back to System">
+          <Text style={styles.backText}>{'‹  System'}</Text>
+        </TouchableOpacity>
+
+        <Label style={styles.firstLabel}>Transaction Logs</Label>
+
+        {logs.length === 0 ? (
+          <Card style={styles.card}>
+            <Text style={styles.note}>No events recorded yet.</Text>
+          </Card>
+        ) : (
+          <Card style={[styles.card, styles.logsCard]}>
+            {logs.map((row, i) => {
+              const ts = new Date(row.created_at).toLocaleString();
+              const syncTag = row.synced === 1 ? 'SYNCED' : 'PENDING';
+              const syncTone = row.synced === 1 ? 'accent' : 'warn';
+              const eventTone =
+                row.event_type === 'check_in'
+                  ? 'accent'
+                  : row.event_type === 'check_out'
+                  ? 'info'
+                  : 'danger';
+              return (
+                <View
+                  key={row.id}
+                  style={[
+                    styles.logRow,
+                    i < logs.length - 1 && styles.logRowBorder,
+                  ]}>
+                  <View style={styles.logMeta}>
+                    <Mono style={styles.logId}>{row.employee_id}</Mono>
+                    <Text style={styles.logTs}>{ts}</Text>
+                  </View>
+                  <View style={styles.logTags}>
+                    <Tag tone={eventTone}>{row.event_type.toUpperCase()}</Tag>
+                    <Tag tone={syncTone}>{syncTag}</Tag>
+                    {row.liveness_score != null && (
+                      <Mono style={styles.logScore}>
+                        {`L ${(row.liveness_score * 100).toFixed(0)}%`}
+                      </Mono>
+                    )}
+                  </View>
+                </View>
+              );
+            })}
+          </Card>
+        )}
+      </ScrollView>
     );
   }
 
@@ -640,6 +723,22 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   gestureDesc: {fontSize: 13, color: colors.textDim, lineHeight: 18},
+
+  // Logs subview
+  logsCard: {paddingVertical: 0, paddingHorizontal: 0},
+  logRow: {
+    paddingHorizontal: space.lg,
+    paddingVertical: space.md,
+  },
+  logRowBorder: {
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.line,
+  },
+  logMeta: {flexDirection: 'row', justifyContent: 'space-between', marginBottom: space.xs},
+  logId: {fontSize: 13, color: colors.text},
+  logTs: {fontSize: 11, color: colors.textFaint, fontFamily: MONO},
+  logTags: {flexDirection: 'row', flexWrap: 'wrap', gap: space.xs, alignItems: 'center'},
+  logScore: {fontSize: 11, color: colors.textDim},
 
   // Help — tips / data notes
   tipRow: {

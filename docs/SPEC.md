@@ -584,7 +584,7 @@ EnrollScreen
 | Model files | Stored in app bundle (Android assets / iOS Bundle); not user-accessible |
 | S3 upload | Presigned URL (15-min TTL); no permanent AWS credentials on device |
 | Attendance records | Encrypted JSON payload in S3 |
-| Failed attempt rate limiting | Lock auth screen for 30 s after 5 consecutive failures |
+| Failed attempt rate limiting | Lock auth screen for 30 s after 3 consecutive failures |
 
 ---
 

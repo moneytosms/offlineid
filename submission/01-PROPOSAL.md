@@ -70,7 +70,7 @@ lockout after repeated failures.
 - **Accuracy/demographics**: MobileFaceNet (LFW 99.5%) + inference-time lighting normalisation
   + ambient-light-triggered fill-light for low-light scenarios; on-device fine-tune on an
   Indian face subset is the field-hardening roadmap.
-- **Low-light handling**: Android `TYPE_LIGHT` sensor measures ambient lux; below 22 lux (configurable) the app maximises screen brightness and overlays white fill-light panels around the face oval to illuminate the subject without any external hardware.
+- **Low-light handling**: Android `TYPE_LIGHT` sensor measures ambient lux; below 15 lux (configurable) the app maximises screen brightness and overlays white fill-light panels around the face oval to illuminate the subject without any external hardware.
 
 ## Demo video
 
@@ -79,7 +79,7 @@ offline attendance log → reconnect + sync.
 
 ## Deliverable artifacts
 
-- **Offline release APK:** `OfflineID-v1.3.0-arm64-v8a.apk` (arm64-v8a, standalone, runs airplane-mode).
+- **Offline release APK:** `OfflineID-v1.4.0-arm64-v8a.apk` (arm64-v8a, standalone, runs airplane-mode).
   Built via `android/ && ./gradlew assembleRelease`. **Too large for the 25 MB proposal zip**,
   so ship it through the form's **"Link for the proposal"** slot (attach to a GitHub Release
   or Drive). See `03-BUILD-OFFLINE-APK.md`.
@@ -88,5 +88,5 @@ offline attendance log → reconnect + sync.
 ## Links
 
 - **Source code (open-source):** https://github.com/moneytosms/offlineid
-- **Offline release APK (v1.3.0):** https://github.com/moneytosms/offlineid/releases/tag/v1.3.0
+- **Offline release APK (v1.4.0):** https://github.com/moneytosms/offlineid/releases/tag/v1.4.0
 - **Demo video:** ➡️ [ADD YOUR DEMO VIDEO LINK]

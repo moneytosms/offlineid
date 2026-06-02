@@ -244,7 +244,7 @@ cd android; .\gradlew.bat --stop; cd ..       # stop a stuck Gradle daemon
 
 | Symptom | Likely cause | Action |
 |---|---|---|
-| Red Metro screen on the release APK | installed the **debug** APK | install `OfflineID-v1.3.0-arm64-v8a.apk` |
+| Red Metro screen on the release APK | installed the **debug** APK | install `OfflineID-v1.4.0-arm64-v8a.apk` |
 | "Could not connect to development server" (debug) | device can't reach Metro | `adb reverse tcp:8081 tcp:8081`; same network |
 | Enrol works, Scan always "Not recognised" | threshold too strict **or** liveness reject | read logcat (§4): `uncertain score=` → §5; `gesture/liveness reject` → §4.1 |
 | `Native module "FaceEngine" is not available` | engine not linked / wrong ABI | rebuild; on emulator build x86_64 (§6) |

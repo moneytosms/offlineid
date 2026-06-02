@@ -11,13 +11,13 @@
 import React, {useCallback, useEffect, useState} from 'react';
 import {
   ActivityIndicator,
-  SafeAreaView,
   StatusBar,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
+import {SafeAreaProvider, SafeAreaView} from 'react-native-safe-area-context';
 
 import {FaceEngine, isFaceEngineAvailable} from './src/services/FaceEngine';
 import {openDatabase} from './src/db/migrations';
@@ -95,32 +95,37 @@ function App(): React.JSX.Element {
 
   if (engineError) {
     return (
-      <SafeAreaView style={[styles.flex, styles.center]}>
-        <StatusBar barStyle="light-content" backgroundColor={colors.bg} />
-        <Text style={styles.bootGlyph}>⚠</Text>
-        <Text style={styles.errorTitle}>SYSTEM FAULT</Text>
-        <Text style={styles.errorBody}>{engineError}</Text>
-      </SafeAreaView>
+      <SafeAreaProvider>
+        <SafeAreaView style={[styles.flex, styles.center]}>
+          <StatusBar barStyle="light-content" backgroundColor={colors.bg} />
+          <Text style={styles.bootGlyph}>⚠</Text>
+          <Text style={styles.errorTitle}>SYSTEM FAULT</Text>
+          <Text style={styles.errorBody}>{engineError}</Text>
+        </SafeAreaView>
+      </SafeAreaProvider>
     );
   }
 
   if (!engineReady || !dbReady) {
     return (
-      <SafeAreaView style={[styles.flex, styles.center]}>
-        <StatusBar barStyle="light-content" backgroundColor={colors.bg} />
-        <Text style={styles.bootBrand}>OFFLINE·ID</Text>
-        <ActivityIndicator size="large" color={colors.accent} style={styles.bootSpin} />
-        <Text style={styles.bootStatus}>
-          {dbReady ? 'LOADING NEURAL MODELS' : 'PREPARING SECURE STORE'}
-        </Text>
-        <Text style={styles.bootSub}>on-device · offline</Text>
-      </SafeAreaView>
+      <SafeAreaProvider>
+        <SafeAreaView style={[styles.flex, styles.center]}>
+          <StatusBar barStyle="light-content" backgroundColor={colors.bg} />
+          <Text style={styles.bootBrand}>OFFLINE·ID</Text>
+          <ActivityIndicator size="large" color={colors.accent} style={styles.bootSpin} />
+          <Text style={styles.bootStatus}>
+            {dbReady ? 'LOADING NEURAL MODELS' : 'PREPARING SECURE STORE'}
+          </Text>
+          <Text style={styles.bootSub}>on-device · offline</Text>
+        </SafeAreaView>
+      </SafeAreaProvider>
     );
   }
 
   const activeTab: Tab = view === 'about' ? 'settings' : view;
 
   return (
+    <SafeAreaProvider>
     <SafeAreaView style={styles.flex}>
       <StatusBar barStyle="light-content" backgroundColor={colors.bg} />
 
@@ -174,6 +179,7 @@ function App(): React.JSX.Element {
         })}
       </View>
     </SafeAreaView>
+    </SafeAreaProvider>
   );
 }
 

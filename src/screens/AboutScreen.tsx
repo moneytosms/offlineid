@@ -156,12 +156,43 @@ export function AboutScreen({onBack}: AboutScreenProps): React.JSX.Element {
         </Text>
       </Card>
 
+      <Label style={styles.section}>Open-source licenses</Label>
+      <Card style={styles.card}>
+        {OSS_LICENSES.map((entry, i) => (
+          <View
+            key={entry.name}
+            style={[
+              styles.licenseRow,
+              i < OSS_LICENSES.length - 1 && styles.licenseRowBorder,
+            ]}>
+            <Text style={styles.licenseName}>{entry.name}</Text>
+            <Text style={styles.licenseSpdx}>{entry.spdx}</Text>
+          </View>
+        ))}
+      </Card>
+
       <Text style={styles.footer}>
         OfflineID · Hackathon 7.0 · MIT licence
       </Text>
     </ScrollView>
   );
 }
+
+const OSS_LICENSES: { name: string; spdx: string }[] = [
+  { name: 'React Native', spdx: 'MIT' },
+  { name: 'ONNX Runtime Mobile', spdx: 'MIT' },
+  { name: 'react-native-vision-camera', spdx: 'MIT' },
+  { name: 'react-native-vision-camera-face-detector', spdx: 'MIT' },
+  { name: '@noble/ciphers (AES-256-GCM)', spdx: 'MIT' },
+  { name: 'SQLite', spdx: 'Public Domain' },
+  { name: 'react-native-sqlite-storage', spdx: 'MIT' },
+  { name: 'uuid', spdx: 'MIT' },
+  { name: '@react-native-community/netinfo', spdx: 'MIT' },
+  { name: 'ML Kit Face Detection (Google)', spdx: 'Apache-2.0' },
+  { name: 'react-native-worklets-core', spdx: 'MIT' },
+  { name: 'react-native-encrypted-storage', spdx: 'MIT' },
+  { name: 'axios', spdx: 'MIT' },
+];
 
 const styles = StyleSheet.create({
   scroll: {flex: 1, backgroundColor: colors.bg},
@@ -215,6 +246,23 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     color: colors.textFaint,
     marginTop: space.xs,
+  },
+  licenseRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: space.sm,
+  },
+  licenseRowBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: colors.line,
+  },
+  licenseName: { ...typo.body, fontSize: 13, color: colors.text, flex: 1 },
+  licenseSpdx: {
+    fontFamily: MONO,
+    fontSize: 11,
+    color: colors.accent,
+    marginLeft: space.md,
   },
   footer: {
     textAlign: 'center',

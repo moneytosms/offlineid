@@ -23,7 +23,7 @@ on-device in about 51 ms on a host CPU.
 4. Install the **offline APK** from the GitHub Release and try it in airplane mode.
 
 - **Source code:** https://github.com/moneytosms/offlineid
-- **Offline release APK (v1.3.0):** https://github.com/moneytosms/offlineid/releases/tag/v1.3.0
+- **Offline release APK (v1.4.0):** https://github.com/moneytosms/offlineid/releases/tag/v1.4.0
 
 ---
 
@@ -32,7 +32,7 @@ on-device in about 51 ms on a host CPU.
 | File | What it is |
 |---|---|
 | `READMEFIRST.md` / `.pdf` | This orientation page, start here. |
-| `FEATURES.md` | Complete feature list for v1.3.0. |
+| `FEATURES.md` | Complete feature list for v1.4.0. |
 | `OfflineID_Hackathon7.pptx` | The presentation, a 16-slide themed deck (mandatory deliverable). |
 | `01-PROPOSAL.md` | Solution overview mapped to Innovation / Feasibility / Scalability / Presentation. |
 | `02-DATALAKE-3.0-INTEGRATION.md` | Exact steps to drop OfflineID into the Datalake 3.0 app, including the iOS engine. |
@@ -59,20 +59,20 @@ on-device in about 51 ms on a host CPU.
 | Offline liveness (blink/smile/turn) | Passive FASNet anti-spoof plus active gesture sequence. |
 | Sync & purge to AWS | Presigned-S3 batch upload, then local purge. |
 | Open-source only | MIT / Apache stack, full source shared. |
-| Low-light operation | Ambient light sensor (TYPE_LIGHT) activates fill-light overlay at < 22 lux (configurable); screen brightness maximised to illuminate face. |
+| Low-light operation | Ambient light sensor (TYPE_LIGHT) activates fill-light overlay at < 15 lux (configurable); screen brightness maximised to illuminate face. |
 
 ---
 
-## What's new in v1.3.0
+## What's new in v1.4.0
 
-- **Configurable Preferences** — users can now customize lux threshold, fill-light brightness, haptic feedback, and auto-restart behavior
-- **Restructured Settings** — intuitive subviews (Display, Technical, Help) for better organization
-- **In-App Help Guide** — gesture explainers, tips for best results, and data privacy info built directly into the app
-- **Low-light sensitivity** — lux threshold lowered to 22 (activation) / 35 (deactivation) for better performance in dark environments
-- **Screen Wake-Lock** — app prevents device sleep during scanning process
-- **Adjustable Zoom** — camera zoom is now configurable and persistent
-- **Brand identity** — custom app icon and in-app brand logo (About screen)
-- **arm64-v8a only build** — eliminates armeabi-v7a CMake/ninja build issues on Windows; APK ~62 MB
+- **Configurable Preferences** - users can now customize lux threshold, fill-light brightness, haptic feedback, and auto-restart behavior
+- **Restructured Settings** - intuitive subviews (Display, Technical, Help) for better organization
+- **In-App Help Guide** - gesture explainers, tips for best results, and data privacy info built directly into the app
+- **Low-light sensitivity** - lux threshold lowered to 15 (activation) / 28 (deactivation) for better performance in dark environments
+- **Screen Wake-Lock** - app prevents device sleep during scanning process
+- **Adjustable Zoom** - camera zoom is now configurable and persistent
+- **Brand identity** - custom app icon and in-app brand logo (About screen)
+- **arm64-v8a only build** - eliminates armeabi-v7a CMake/ninja build issues on Windows; APK ~62 MB
 
 ---
 

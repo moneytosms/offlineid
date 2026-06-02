@@ -1,79 +1,98 @@
 /**
  * White fill-light panels rendered around the face oval when the scene is dark.
  *
- * Splits the screen into four white rectangles that surround the 250×310
- * reticle oval, leaving the oval area transparent so the camera preview and
- * reticle remain visible. The phone display acting as a bright white ring-light
- * illuminates the subject's face without obscuring the viewfinder.
+ * Splits the container into four white rectangles that surround the face oval,
+ * leaving the oval area transparent so the camera preview and reticle remain
+ * visible. Uses `onLayout` to measure the actual container size (accounting for
+ * header and tab bar) rather than the full window dimensions.
  *
  * @module components/FillLightOverlay
  */
 
-import React from 'react';
-import { Dimensions, StyleSheet, View } from 'react-native';
+import React, { useState } from 'react';
+import { StyleSheet, View } from 'react-native';
+import type { LayoutChangeEvent } from 'react-native';
 
-/** Half-dimensions of the face oval used in AuthScreen / EnrollScreen. */
-const OVAL_HALF_W = 125; // 250 / 2
-const OVAL_HALF_H = 155; // 310 / 2
+const FILL = 'rgba(255,255,255,0.92)';
 
-const { width: SW, height: SH } = Dimensions.get('window');
-const CX = SW / 2;
-const CY = SH / 2;
+/** FillLightOverlay props. */
+export interface FillLightOverlayProps {
+  /** Width of the face oval reticle in the camera view (default 250). */
+  ovalWidth?: number;
+  /** Height of the face oval reticle in the camera view (default 310). */
+  ovalHeight?: number;
+}
 
 /**
  * Four white panels that frame the center oval, maximising the lit area while
  * keeping the viewfinder and reticle unobstructed.
  *
  * Render this **above** the CameraView but **below** the reticle + UI overlays.
+ * Oval dimensions default to the AuthScreen reticle (250 × 310); pass explicit
+ * values for other camera views (e.g. EnrollScreen uses 240 × 300).
  */
-export function FillLightOverlay(): React.JSX.Element {
+export function FillLightOverlay({
+  ovalWidth = 250,
+  ovalHeight = 310,
+}: FillLightOverlayProps): React.JSX.Element {
+  const [size, setSize] = useState<{ width: number; height: number } | null>(null);
+
+  const onLayout = (e: LayoutChangeEvent): void => {
+    const { width, height } = e.nativeEvent.layout;
+    setSize({ width, height });
+  };
+
   return (
-    <>
-      {/* Top panel */}
-      <View style={styles.top} pointerEvents="none" />
-      {/* Bottom panel */}
-      <View style={styles.bottom} pointerEvents="none" />
-      {/* Left panel (middle row only, avoids double-covering corners) */}
-      <View style={styles.left} pointerEvents="none" />
-      {/* Right panel */}
-      <View style={styles.right} pointerEvents="none" />
-    </>
+    <View style={StyleSheet.absoluteFillObject} onLayout={onLayout} pointerEvents="none">
+      {size != null && (() => {
+        const cx = size.width / 2;
+        const cy = size.height / 2;
+        const halfW = ovalWidth / 2;
+        const halfH = ovalHeight / 2;
+        return (
+          <>
+            {/* Top panel */}
+            <View
+              style={{
+                position: 'absolute',
+                top: 0, left: 0, right: 0,
+                height: Math.max(0, cy - halfH),
+                backgroundColor: FILL,
+              }}
+            />
+            {/* Bottom panel */}
+            <View
+              style={{
+                position: 'absolute',
+                top: cy + halfH, left: 0, right: 0, bottom: 0,
+                backgroundColor: FILL,
+              }}
+            />
+            {/* Left panel (middle row only, avoids double-covering corners) */}
+            <View
+              style={{
+                position: 'absolute',
+                top: cy - halfH, left: 0,
+                width: Math.max(0, cx - halfW),
+                height: halfH * 2,
+                backgroundColor: FILL,
+              }}
+            />
+            {/* Right panel */}
+            <View
+              style={{
+                position: 'absolute',
+                top: cy - halfH, right: 0,
+                width: Math.max(0, cx - halfW),
+                height: halfH * 2,
+                backgroundColor: FILL,
+              }}
+            />
+          </>
+        );
+      })()}
+    </View>
   );
 }
 
-const FILL = 'rgba(255,255,255,0.92)';
-
-const styles = StyleSheet.create({
-  top: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: CY - OVAL_HALF_H,
-    backgroundColor: FILL,
-  },
-  bottom: {
-    position: 'absolute',
-    top: CY + OVAL_HALF_H,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: FILL,
-  },
-  left: {
-    position: 'absolute',
-    top: CY - OVAL_HALF_H,
-    left: 0,
-    width: CX - OVAL_HALF_W,
-    height: OVAL_HALF_H * 2,
-    backgroundColor: FILL,
-  },
-  right: {
-    position: 'absolute',
-    top: CY - OVAL_HALF_H,
-    right: 0,
-    width: CX - OVAL_HALF_W,
-    height: OVAL_HALF_H * 2,
-    backgroundColor: FILL,
-  },
-});
+export default FillLightOverlay;
