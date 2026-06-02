@@ -20,7 +20,7 @@ field (your GitHub repo / Google Drive).
 | File | Purpose | Maps to deliverable |
 |---|---|---|
 | `READMEFIRST.md` / `.pdf` | Start-here orientation: what this is + what each doc is | - |
-| `FEATURES.md` | Complete feature list for v1.3.0 | - |
+| `FEATURES.md` | Complete feature list for v1.4.0 | - |
 | `README.md` | This index + how to submit | - |
 | `01-PROPOSAL.md` | Solution overview: problem → approach → why it wins | Presentation |
 | `02-DATALAKE-3.0-INTEGRATION.md` | **Exact steps to drop OfflineID into Datalake 3.0** | Feasibility / Integration steps |
@@ -64,7 +64,7 @@ Compress-Archive -Path submission\* -DestinationPath OfflineID_Hackathon7_Propos
 ### 2. "Link for the proposal"
 A public link to the **full deliverable** that won't fit in 25 MB:
 - **Working prototype source code** (this whole repo, open-source), push to GitHub.
-- **Signed offline APK**, `OfflineID-v1.3.0-arm64-v8a.apk` (see `03-BUILD-OFFLINE-APK.md`), attach to a
+- **Signed offline APK**, `OfflineID-v1.4.0-arm64-v8a.apk` (see `03-BUILD-OFFLINE-APK.md`), attach to a
   GitHub Release or Drive folder.
 - **Demo video** (≤ 3 min): enroll → live auth → spoof rejected → offline log → reconnect
   + sync. YouTube unlisted or Drive.
@@ -97,7 +97,7 @@ Name · Email (+verify) · Mobile · Team Leader name · Team Size · Captcha, f
 | Model footprint ~20 MB | ✅ **9.1 MB** total model bundle |
 | < 1 s recognise + liveness | ✅ ~51 ms host-CPU pipeline; sub-second on mid-range ARM |
 | Android 8+ / iOS 12+, 3 GB RAM, no high-end GPU | ✅ CPU-only ONNX Runtime (XNNPACK/NNAPI) |
-| > 95 % accuracy, Indian demographics, varied lighting | MobileFaceNet (LFW 99.5%) + inference-time normalisation + ambient-lux fill-light overlay (activates < 22 lux via TYPE_LIGHT sensor, configurable); field fine-tune = roadmap |
+| > 95 % accuracy, Indian demographics, varied lighting | MobileFaceNet (LFW 99.5%) + inference-time normalisation + ambient-lux fill-light overlay (activates < 15 lux via TYPE_LIGHT sensor, configurable); field fine-tune = roadmap |
 | Open-source only, share source | ✅ MIT-licensed stack, full source in repo |
 | Offline liveness (blink/smile/turn) | ✅ passive FASNet + active gesture sequence |
 | Sync & purge to AWS after reconnect | ✅ presigned-S3 batch sync + local purge |

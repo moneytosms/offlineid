@@ -64,17 +64,17 @@
 ### Slide 12 - Security
 - Embeddings AES-256-GCM at rest; key in Keystore/Secure Enclave.
 - No raw images stored; only ≤20KB audit thumbnails, purged on sync.
-- Presigned URLs (15-min TTL); rate-limit 30s lockout after 5 fails.
+- Presigned URLs (15-min TTL); rate-limit 30s lockout after 3 fails.
 - Visual: 4-layer security stack (`ARCHITECTURE.md §4`).
 
 ### Slide 13 - Low-Light & Outdoor Handling
-- Android `TYPE_LIGHT` ambient sensor: activates white fill-light overlay at **< 22 lux**, deactivates at 35 lux (configurable by operator).
+- Android `TYPE_LIGHT` ambient sensor: activates white fill-light overlay at **< 15 lux**, deactivates at 28 lux (configurable by operator).
 - Four white overlay panels frame the face oval — screen-as-ring-light, zero external hardware.
 - Inference-time histogram equalisation + auto-gamma for harsh sun, deep shadow, and back-lit scenes.
 - Fine-tune path on South-Asian face subset (roadmap).
 - Visual: split screen — fill-light panels active vs. off; lux gauge readout.
 
-### Slide 14 - Field-Ready UX (v1.3.0)
+### Slide 14 - Field-Ready UX (v1.4.0)
 - **Configurable preferences**: operator can tune lux threshold, fill-light brightness, haptic feedback, auto-restart on result.
 - **Settings subviews**: Display · Technical · Help — clean separation of field config from model parameters.
 - **In-app Help Guide**: gesture explainers (blink/smile/turn), tips for best results, data privacy info — no external docs needed.
@@ -97,7 +97,7 @@
 
 ### Slide 18 - Tech & Quality
 - Open-source only, no paid licences. TypeScript strict, 15 unit tests, typecheck clean.
-- Standalone **offline release APK** v1.3.0 built end-to-end (JS bundle embedded, runs airplane-mode).
+- Standalone **offline release APK** v1.4.0 built end-to-end (JS bundle embedded, runs airplane-mode).
 - Visual: green CI checkmarks.
 
 ### Slide 19 - Scalability & Sustainability
@@ -111,7 +111,7 @@
 
 ### Slide 21 - Closing
 - OfflineID = secure, lightweight, fully offline face auth that plugs into Datalake 3.0.
-- v1.3.0: field-ready, configurable, guided. Repo + docs links. Thank you / Q&A.
+- v1.4.0: field-ready, configurable, guided. Repo + docs links. Thank you / Q&A.
 
 ---
 

@@ -215,7 +215,7 @@ Five tabs (bottom bar): **Scan · Enrol · People · Sync · System**.
 - The header badge shows the unsynced count.
 
 ### 6.5 System / Settings
-- **Display** subview: fill-light brightness, ambient lux threshold (default 22 activation / 35 deactivation), screen wake-lock, camera zoom level.
+- **Display** subview: fill-light brightness, ambient lux threshold lowered to 15 activation / 35 deactivation), screen wake-lock, camera zoom level.
 - **Technical** subview: model + matching thresholds, haptic feedback toggle, auto-restart on result.
 - **Help** subview: gesture explainers (blink / smile / turn), tips for best results, data privacy info.
 - Device info, factory reset, and the in-app About screen are also accessible from System.
@@ -272,7 +272,7 @@ npx tsc --noEmit    # TypeScript typecheck, must be clean
 | Gradle: requires AGP 8.6 / compileSdk 35 | CameraX (vision-camera 4.x) | ensure SDK 35 installed |
 | Gradle: invalid source release: 17 | `JAVA_HOME` not JDK 17 | export JDK 17 (1.2) |
 | `ninja: build.ninja still dirty` on release | vision-camera v7a CMake on a path with spaces | build with `-PreactNativeArchitectures=arm64-v8a` |
-| Red Metro screen on the release APK | installed the debug APK | install `OfflineID-v1.3.0-arm64-v8a.apk` |
+| Red Metro screen on the release APK | installed the debug APK | install `OfflineID-v1.4.0-arm64-v8a.apk` |
 | Liveness always fails | FASNet expects **BGR** channel order | see MODEL_PIPELINE 3.4 |
 | Recognition accuracy low | missing ArcFace 5-point alignment | align before MobileFaceNet (native, implemented) |
 

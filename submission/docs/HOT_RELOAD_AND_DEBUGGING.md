@@ -12,19 +12,19 @@ All commands are PowerShell (Windows). On macOS/Linux swap `Select-String` for `
 
 ---
 
-## 0. Two run modes — know which you are in
+## 0. Two run modes - know which you are in
 
 | | Debug (hot reload) | Release (the APK you ship) |
 |---|---|---|
 | JS source | streamed live from **Metro** | embedded in the APK |
 | Needs dev server | yes (`npm start`) | no |
-| Needs network | yes (to reach Metro) | **no — fully offline** |
+| Needs network | yes (to reach Metro) | **no - fully offline** |
 | Fast Refresh / hot reload | ✅ | ❌ |
 | Log verbosity (`logger`) | `debug` and up | `info` and up (see §3) |
 | Built with | `run-android` | `assembleRelease` |
 
 **Most "it isn't working on my friend's phone" reports are about the release APK.** A debug
-APK shows a red Metro error screen if it cannot reach a dev server — if your friend sees
+APK shows a red Metro error screen if it cannot reach a dev server - if your friend sees
 that, give them the **release** APK instead (see `SETUP_AND_USAGE.md` §4.2).
 
 ---
@@ -49,15 +49,15 @@ adb devices        # exactly one entry, state "device" (not "unauthorized")
 
 ## 2. Hot reload (Fast Refresh) workflow
 
-Use this while editing JS/TS — edits apply in ~1 s without losing app state.
+Use this while editing JS/TS - edits apply in ~1 s without losing app state.
 
-**Terminal 1 — Metro dev server:**
+**Terminal 1 - Metro dev server:**
 
 ```powershell
 npm start                 # or:  npm start -- --reset-cache  after dep/babel changes
 ```
 
-**Terminal 2 — build + install the debug app once:**
+**Terminal 2 - build + install the debug app once:**
 
 ```powershell
 npx react-native run-android
@@ -91,16 +91,16 @@ Fast Refresh only swaps **JS/TS**. If you change any of these you must rebuild
 - `babel.config.js`, `metro.config.js`, native deps, permissions.
 
 > Threshold constants (`MATCH_THRESHOLD`, `PASSIVE_LIVENESS_THRESHOLD`, …) are plain TS, so
-> tuning them **is** hot-reloadable — handy when calibrating against your lighting (§5).
+> tuning them **is** hot-reloadable - handy when calibrating against your lighting (§5).
 
 ---
 
-## 3. Logging — what prints, and where
+## 3. Logging - what prints, and where
 
 The app logs through `src/utils/logger.ts`. Levels: `debug < info < warn < error`.
 
 ```ts
-// logger.ts:18 — level is chosen by build type
+// logger.ts:18 - level is chosen by build type
 export const LOG_LEVEL = __DEV__ ? 'debug' : 'info';
 ```
 
@@ -129,17 +129,17 @@ Every app line is prefixed `[OfflineID][<tag>]`, e.g. `[OfflineID][FaceAuth]`.
 
 ---
 
-## 4. Diagnosing "Not recognised — No enrolled match or liveness failed"
+## 4. Diagnosing "Not recognised - No enrolled match or liveness failed"
 
 That on-screen message is the **single generic FAIL text** for *both* reject paths
 (liveness/gesture reject **and** recognition below threshold). The UI can't tell you which
-one fired — **the log can**. Reproduce once with logcat running and match the line:
+one fired - **the log can**. Reproduce once with logcat running and match the line:
 
 | Log line (tag `FaceAuth`/`Liveness`) | Level | Meaning | Likely fix |
 |---|---|---|---|
 | `liveness reject` | info | passive FASNet score ≤ 0.6 | even lighting; not backlit. See §5. |
 | `gesture reject (BLINK/SMILE/...)` | info | active gesture not completed in window | perform the prompted gesture from a **neutral** face first (§4.1) |
-| `uncertain score=0.5x retry=N` | info | genuine match landed in 0.45–0.65 band | **threshold too strict — §5** |
+| `uncertain score=0.5x retry=N` | info | genuine match landed in 0.45–0.65 band | **threshold too strict - §5** |
 | `SUCCESS <id> score=0.7x` | info | matched | working |
 | `Native module "FaceEngine" is not available` | error | native engine not linked / wrong ABI | rebuild; on emulator see §6 |
 | `pipeline error` | error | exception mid-pipeline (camera/still/model) | read the attached stack |
@@ -198,7 +198,7 @@ Running the release APK on an emulator is useful but **may not reproduce a phone
 1. **ABI mismatch.** Emulators are usually **x86_64**; phones are **arm64-v8a**. The shipped
    APK is built arm64-only (`-PreactNativeArchitectures=arm64-v8a`, ~58 MB). On an x86_64
    emulator the native ONNX `FaceEngine` lib won't load → `Native module "FaceEngine" is
-   not available` — a *different* failure from the phone's recognition reject. For the
+   not available` - a *different* failure from the phone's recognition reject. For the
    emulator, build an x86_64 APK:
 
    ```powershell
@@ -244,7 +244,7 @@ cd android; .\gradlew.bat --stop; cd ..       # stop a stuck Gradle daemon
 
 | Symptom | Likely cause | Action |
 |---|---|---|
-| Red Metro screen on the release APK | installed the **debug** APK | install `OfflineID-v1.3.0-arm64-v8a.apk` |
+| Red Metro screen on the release APK | installed the **debug** APK | install `OfflineID-v1.4.0-arm64-v8a.apk` |
 | "Could not connect to development server" (debug) | device can't reach Metro | `adb reverse tcp:8081 tcp:8081`; same network |
 | Enrol works, Scan always "Not recognised" | threshold too strict **or** liveness reject | read logcat (§4): `uncertain score=` → §5; `gesture/liveness reject` → §4.1 |
 | `Native module "FaceEngine" is not available` | engine not linked / wrong ABI | rebuild; on emulator build x86_64 (§6) |
