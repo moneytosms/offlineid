@@ -327,7 +327,7 @@ export function EnrollScreen({
       />
 
       {/* Fill-light overlay — white panels around the oval in low light. */}
-      {lowLight && <FillLightOverlay />}
+      {lowLight && <FillLightOverlay ovalWidth={240} ovalHeight={300} />}
 
       {/* Scanner reticle. */}
       <View style={styles.reticleWrap} pointerEvents="none">
@@ -439,7 +439,7 @@ const styles = StyleSheet.create({
     padding: space.xl,
     paddingBottom: space.xxl,
     alignItems: 'center',
-    backgroundColor: 'rgba(10,14,13,0.55)',
+    backgroundColor: 'rgba(8,12,26,0.55)',
   },
   dots: { flexDirection: 'row', gap: space.sm, marginBottom: space.lg },
   dot: {

@@ -77,7 +77,7 @@ export const UNCERTAIN_THRESHOLD = 0.25;
 export const MAX_UNCERTAIN_RETRIES = 3;
 
 /** Consecutive session failures before lockout (SPEC §12). */
-export const MAX_CONSECUTIVE_FAILS = 5;
+export const MAX_CONSECUTIVE_FAILS = 3;
 
 /** Lockout duration after too many failures (SPEC §12). */
 export const LOCKOUT_MS = 30_000;

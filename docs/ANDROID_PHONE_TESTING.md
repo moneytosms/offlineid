@@ -101,7 +101,7 @@ Expected current behavior:
 - Camera permission prompt appears; preview shows after granting.
 - Enrol: green box locks when face is steady → 3 captures → "Enrolled".
 - Auth: hold still → passive liveness → gesture prompt (blink/turn/smile) →
-  recognise → welcome card, or "Not recognised" / lockout after 5 fails.
+  recognise → welcome card, or "Not recognised" / lockout after 3 fails.
 
 ## Run With Metro
 

@@ -21,16 +21,16 @@ export const MONO = Platform.select({
 /** Colour palette. */
 export const colors = {
   // Surfaces (darkest → lightest panel).
-  bg: '#0A0E0D', // app background, near-black with a green cast
-  surface: '#111714', // cards / panels
-  surfaceAlt: '#161D1A', // raised / inputs
-  line: '#22302B', // hairline borders
-  lineBright: '#2F423B',
+  bg: '#080C1A', // app background, deep navy
+  surface: '#0D1226', // cards / panels
+  surfaceAlt: '#111930', // raised / inputs
+  line: '#1E2847', // hairline borders
+  lineBright: '#283461',
 
-  // Accent — the "live" scanner green.
-  accent: '#00E676',
-  accentDim: '#0B3D2A',
-  accentGlow: 'rgba(0,230,118,0.18)',
+  // Accent — sky blue highlight.
+  accent: '#38BDF8',
+  accentDim: '#0C2340',
+  accentGlow: 'rgba(56,189,248,0.18)',
 
   // Signal colours.
   warn: '#FFB300',
@@ -42,7 +42,7 @@ export const colors = {
   text: '#EAF3EF',
   textDim: '#8DA39B',
   textFaint: '#5C726A',
-  onAccent: '#04130C',
+  onAccent: '#030A12',
 } as const;
 
 /** Spacing scale (4pt base). */
