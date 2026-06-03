@@ -104,5 +104,7 @@ cd ios && pod install && cd ..
 npx react-native run-ios --configuration Release
 # or Archive in Xcode for a distributable .ipa
 ```
-Until the iOS native `FaceEngine` module is ported, the iOS build runs the UI but face
-inference is unavailable, Android is the working prototype for this submission.
+Until the iOS Xcode build wiring is complete (Podfile pod + bundle resources + bridging header,
+documented in `ios/FaceEngine/README.md`), the iOS build runs the UI but face inference is
+unavailable. The Swift engine is written and ready; Android is the build-verified prototype
+for this submission.

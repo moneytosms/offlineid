@@ -97,7 +97,7 @@ Built to drop into the existing **Datalake 3.0** React Native app as a self-cont
 │   └── FaceEngine/         # native Swift FaceEngine (1:1 Kotlin port)
 ├── models/                 # ONNX models + export scripts source
 ├── scripts/                # Python model export / validation
-├── submission/             # Hackathon 7.0 proposal package (zip this)
+├── submission/             # Hackathon 7.0 proposal package
 └── docs/                   # architecture, spec, benchmarks, pipeline, findings
 ```
 
@@ -206,7 +206,7 @@ npx react-native run-ios --configuration Release
 | [`docs/ANDROID_PHONE_TESTING.md`](docs/ANDROID_PHONE_TESTING.md) | On-device testing notes |
 | [`docs/FINDINGS.md`](docs/FINDINGS.md) | Project explainer + debugging journey |
 | [`docs/PRESENTATION.md`](docs/PRESENTATION.md) | Slide deck outline |
-| [`submission/`](submission/) | Hackathon proposal package + Datalake integration guide |
+| [`submission/`](submission/) | Hackathon 7.0 proposal package |
 
 ---
 

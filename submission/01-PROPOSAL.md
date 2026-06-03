@@ -74,8 +74,9 @@ lockout after repeated failures.
 
 ## Demo video
 
-➡️ **[ADD YOUR DEMO VIDEO LINK HERE]**, ≤ 3 min: enroll → live auth → spoof rejected →
-offline attendance log → reconnect + sync.
+➡️ https://drive.google.com/file/d/1ENnZUZL7irgVVV_VfYtbC29dERUg1aRo/view?usp=sharing
+
+≤ 3 min: enroll → live auth → spoof rejected → offline attendance log → reconnect + sync.
 
 ## Deliverable artifacts
 
@@ -89,4 +90,3 @@ offline attendance log → reconnect + sync.
 
 - **Source code (open-source):** https://github.com/moneytosms/offlineid
 - **Offline release APK (v1.4.0):** https://github.com/moneytosms/offlineid/releases/tag/v1.4.0
-- **Demo video:** ➡️ [ADD YOUR DEMO VIDEO LINK]

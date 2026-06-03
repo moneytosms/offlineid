@@ -1,103 +1,175 @@
 <div align="center">
-<img src="brand_logo.png" alt="OfflineID" width="200" />
+<img src="../brand_logo.png" alt="OfflineID" width="200" />
 </div>
 
-# OfflineID - Hackathon 7.0 Submission Package
+# OfflineID
 
-**Programme:** Develop a mobile based secure offline facial recognition and liveness
-detection system for remote locations
-**Module:** OfflineID, an offline face-recognition + liveness module for the
-**Datalake 3.0** React Native app.
+**NHAI Hackathon 7.0** entry for *"Develop a mobile based secure offline facial recognition
+and liveness detection system for remote locations."*
 
-This folder is the **proposal package** you upload to the registration form. The full
-source code, signed APK, and demo video are delivered via the **"Link for the proposal"**
-field (your GitHub repo / Google Drive).
+OfflineID is a React Native module that authenticates field personnel with **face
+recognition + liveness detection, fully offline** (no internet, no cloud API), then
+**syncs-and-purges** attendance to AWS S3 when connectivity returns. It is built to drop
+into the existing **Datalake 3.0** app. Four open-source ONNX models (9.1 MB total) run
+on-device in about 51 ms on a host CPU.
 
----
-
-## What's in this folder
-
-| File | Purpose | Maps to deliverable |
-|---|---|---|
-| `READMEFIRST.md` / `.pdf` | Start-here orientation: what this is + what each doc is | - |
-| `FEATURES.md` | Complete feature list for v1.4.0 | - |
-| `README.md` | This index + how to submit | - |
-| `01-PROPOSAL.md` | Solution overview: problem → approach → why it wins | Presentation |
-| `02-DATALAKE-3.0-INTEGRATION.md` | **Exact steps to drop OfflineID into Datalake 3.0** | Feasibility / Integration steps |
-| `03-BUILD-OFFLINE-APK.md` | Build the standalone **offline** release APK (not debug/Metro) | Working Prototype |
-| `OfflineID_Hackathon7.pptx` | **Ready-to-present 21-slide deck** (themed) | **Presentation (mandatory)** |
-| `PRESENTATION.md` | Slide outline / speaker notes behind the deck | Presentation |
-| `docs/ARCHITECTURE.md` | System + data-flow architecture | Technical Documentation |
-| `docs/MODEL_PIPELINE.md` | AI pipeline + model details | Technical Documentation |
-| `docs/BENCHMARKS.md` | Size + latency benchmarks | Performance benchmarks |
-| `docs/SPEC.md` | Full functional/technical spec | Technical Documentation |
-| `docs/SETUP_AND_USAGE.md` | Build + run + demo walkthrough | Technical Documentation |
-| `docs/HOT_RELOAD_AND_DEBUGGING.md` | Hot reload, on-device `logcat`, diagnosing "Not recognised", threshold tuning, emulator caveats | Technical Documentation |
-
-> The **PPTX presentation is a mandatory deliverable** and is already built:
-> `OfflineID_Hackathon7.pptx` (16 themed slides). Regenerate any time with
-> `.venv/Scripts/python.exe scripts/build_pptx.py`. Open it once in PowerPoint/Google
-> Slides to add your team names (slide 1) and tweak as you like.
+- **Source code:** https://github.com/moneytosms/offlineid
+- **Offline release APK (v1.4.0):** https://github.com/moneytosms/offlineid/releases/tag/v1.4.0
 
 ---
 
-## How to submit (registration form)
+## What is in this package
 
-The form has two delivery slots, use both:
-
-### 1. "Upload proposal (.zip/.rar, max 25 MB)"
-Zip **this `submission/` folder** (after adding the exported `.pptx` and a demo-video
-link). Do **not** include `node_modules`, `.git`, `.venv`, or build artifacts, those
-go via the link below.
-
-**Zip it (PowerShell, from repo root):**
-```powershell
-# Export PRESENTATION.md to PPTX first and drop it into submission/ as Presentation.pdf or .pptx
-Compress-Archive -Path submission\* -DestinationPath OfflineID_Hackathon7_Proposal.zip -Force
-"{0:N2} MB" -f ((Get-Item OfflineID_Hackathon7_Proposal.zip).Length / 1MB)   # confirm < 25 MB
-```
-
-**Filename rule (from the form):** *"Filename should not contain special characters
-(^, &, %, .) except the extension dot."* So `OfflineID_Hackathon7_Proposal.zip` is valid
-(underscores OK, no spaces, single dot before `zip`). Avoid `v1.0`, `&`, `%`, spaces.
-
-### 2. "Link for the proposal"
-A public link to the **full deliverable** that won't fit in 25 MB:
-- **Working prototype source code** (this whole repo, open-source), push to GitHub.
-- **Signed offline APK**, `OfflineID-v1.4.0-arm64-v8a.apk` (see `03-BUILD-OFFLINE-APK.md`), attach to a
-  GitHub Release or Drive folder.
-- **Demo video** (≤ 3 min): enroll → live auth → spoof rejected → offline log → reconnect
-  + sync. YouTube unlisted or Drive.
-
-Recommended: one GitHub repo, with the APK + video on a tagged **Release**, and paste that
-Release URL into the form.
-
-### Other form fields
-Name · Email (+verify) · Mobile · Team Leader name · Team Size · Captcha, fill as your team.
-
----
-
-## Submission checklist
-
-- [x] Themed **PPTX** built: `OfflineID_Hackathon7.pptx` (add team names on slide 1)
-- [ ] Demo video recorded + link added (in `01-PROPOSAL.md` and the form link)
-- [ ] Full source pushed to a **public** GitHub repo (open-source only, no paid licences)
-- [ ] **Release** (offline) APK built and attached to repo Release, see `03-BUILD-OFFLINE-APK.md`
-- [ ] Proposal zip built, **filename has no `^ & % .` except the `.zip`**, and is **< 25 MB**
-- [ ] "Link for the proposal" = the GitHub Release URL
-- [ ] Submit before **Last date: 5 June 2026** (official closure 05.06.2026)
-
----
-
-## Brief compliance at a glance
-
-| Constraint (brief) | Status |
+| File | What it is |
 |---|---|
-| React Native, Android + iOS | RN ✅ · Android native engine ✅ (offline APK) · iOS native engine **written in Swift** (`ios/FaceEngine/`), Xcode build wiring pending (needs a Mac) |
-| Model footprint ~20 MB | ✅ **9.1 MB** total model bundle |
-| < 1 s recognise + liveness | ✅ ~51 ms host-CPU pipeline; sub-second on mid-range ARM |
-| Android 8+ / iOS 12+, 3 GB RAM, no high-end GPU | ✅ CPU-only ONNX Runtime (XNNPACK/NNAPI) |
-| > 95 % accuracy, Indian demographics, varied lighting | MobileFaceNet (LFW 99.5%) + inference-time normalisation + ambient-lux fill-light overlay (activates < 15 lux via TYPE_LIGHT sensor, configurable); field fine-tune = roadmap |
-| Open-source only, share source | ✅ MIT-licensed stack, full source in repo |
-| Offline liveness (blink/smile/turn) | ✅ passive FASNet + active gesture sequence |
-| Sync & purge to AWS after reconnect | ✅ presigned-S3 batch sync + local purge |
+| `README.md` | This orientation page, start here. |
+| `OfflineID_Hackathon7.pptx` | The presentation, a 16-slide themed deck (mandatory deliverable). |
+| `01-PROPOSAL.md` | Solution overview mapped to Innovation / Feasibility / Scalability / Presentation. |
+| `02-DATALAKE-3.0-INTEGRATION.md` | Exact steps to drop OfflineID into the Datalake 3.0 app, including the iOS engine. |
+| `03-BUILD-OFFLINE-APK.md` | How the standalone offline release APK is built (not debug / Metro). |
+| `docs/ARCHITECTURE.md` | System design, data flows, and the security model. |
+| `docs/MODEL_PIPELINE.md` | The AI pipeline: detection, alignment, liveness, recognition, preprocessing. |
+| `docs/BENCHMARKS.md` | Model sizes and measured latencies. |
+| `docs/SPEC.md` | Full functional and technical specification. |
+| `docs/SETUP_AND_USAGE.md` | Build, run, and demo walkthrough. |
+| `docs/HOT_RELOAD_AND_DEBUGGING.md` | Hot reload, on-device logcat, diagnosing "Not recognised", threshold tuning, emulator caveats. |
+
+---
+
+## How it satisfies the brief
+
+| Constraint | Status |
+|---|---|
+| React Native, Android + iOS | RN UI shared; Android native engine ships an offline APK; iOS engine written in Swift (`ios/FaceEngine/`), Xcode wiring pending. |
+| Model footprint ~20 MB | **9.1 MB** total model bundle. |
+| < 1 s recognise + liveness | ~51 ms host-CPU pipeline; sub-second on mid-range ARM. |
+| Android 8+ / iOS 12+, 3 GB RAM, no GPU | CPU-only ONNX Runtime (XNNPACK / NNAPI). |
+| > 95% accuracy | MobileFaceNet (LFW 99.5%) + inference-time lighting normalisation. |
+| Offline liveness (blink/smile/turn) | Passive FASNet anti-spoof plus active gesture sequence. |
+| Sync & purge to AWS | Presigned-S3 batch upload, then local purge. |
+| Open-source only | MIT / Apache stack, full source shared. |
+| Low-light operation | Ambient light sensor (TYPE_LIGHT) activates fill-light overlay at < 15 lux (configurable); screen brightness maximised to illuminate face. |
+
+---
+
+## Feature Reference (v1.4.0)
+
+> Every feature works fully offline unless noted otherwise.
+
+### 1. Core AI Pipeline
+
+| Feature | Detail |
+|---|---|
+| **Face Detection** | SCRFD-500M (2.41 MB) - detects face + 5 landmarks in a single forward pass at 640×640 |
+| **Anti-Spoofing (Passive)** | MiniFASNetV2 + MiniFASNetV1SE - two-scale (2.7× and 4.0×) crop inference in BGR; P(real) > 0.6 to pass |
+| **Active Liveness** | ML Kit on-device: random gesture selected per session - **blink** (EAR), **head turn** (yaw ±20°), or **smile**; 5-second window |
+| **Face Recognition** | MobileFaceNet INT8 (3.35 MB) - 512-dim L2-normalised embedding; ArcFace 5-point alignment (no OpenCV, manual similarity transform) |
+| **Matching** | Cosine similarity vs all enrolled embeddings; > 0.65 = match, 0.45–0.65 = retry, < 0.45 = reject |
+| **Model Bundle** | 4 ONNX models, **9.09 MB** total (cap: 20 MB); ~51 ms host-CPU pipeline |
+
+### 2. Enrolment
+
+- **3-angle capture**: frontal + slight left + slight right; embeddings averaged and L2-normalised
+- **Fields stored**: Employee ID, Name, Department
+- **Storage**: AES-256-GCM encrypted embedding BLOB in SQLite (`face_embeddings` table)
+- **Key management**: Android Keystore (hardware-backed on supported devices)
+- **No raw images stored** - only the encrypted 512-float embedding
+
+### 3. Authentication (Scan)
+
+- Full pipeline: SCRFD detect → FASNet×2 passive liveness → ML Kit gesture → MobileFaceNet embed → cosine match
+- **Result tiers**: Granted (> 0.65) / Retry (0.45–0.65) / Rejected (< 0.45)
+- **Rate limiting**: 5 failures → 30-second lockout
+- **Attendance row** written to SQLite on success (`synced = 0`, purged after sync)
+
+### 4. Security
+
+| Feature | Implementation |
+|---|---|
+| Embedding encryption | AES-256-GCM, key in Android Keystore / iOS Secure Enclave |
+| No raw image persistence | Audit thumbnails ≤ 20 KB, purged after sync |
+| No cloud credentials on device | Presigned S3 URLs (15-min TTL) - server holds the key |
+| Failure lockout | 30 s lockout after 3 consecutive rejections |
+| Two-layer liveness | Passive anti-spoof (FASNet) + active gesture - defeats printed photos, screen replays, 2D masks |
+
+### 5. Offline-First Data
+
+- **Fully offline**: enrolment, authentication, liveness, attendance logging - all on-device
+- **SQLite on-device**: `face_embeddings` (permanent, encrypted) + `attendance_log` (ephemeral, purged on sync)
+- **Sync queue**: unsynced rows batched ≤ 10 per request
+- **Auto-sync**: NetInfo reconnect event triggers `SyncService`
+- **Manual sync**: "Sync now" button on the Sync tab
+- **Purge on ACK**: local attendance rows deleted after S3 confirms receipt
+
+### 6. Sync & Cloud
+
+- Reconnect → batch ≤ 10 pending rows → request presigned PUT URLs → upload to S3 → confirm → **local DELETE**
+- Exponential backoff on failure; 403 triggers presigned-URL refresh
+- `SyncBadge` in header shows live unsynced count
+
+### 7. Low-Light & Outdoor Handling
+
+| Feature | Detail |
+|---|---|
+| Ambient sensor | Android `TYPE_LIGHT` sensor polled continuously during scanning |
+| Fill-light activation | Screen brightness → maximum; 4 white overlay panels frame the face oval at **< 15 lux** (configurable) |
+| Fill-light deactivation | Hysteresis: turns off at **28 lux** (configurable) to avoid flicker |
+| Zero hardware | Screen acts as ring light - no external flash or LEDs needed |
+| Inference normalisation | Histogram equalisation + auto-gamma applied at inference time for harsh sun, deep shadow, and back-lit scenes |
+
+### 8. Configurable Preferences
+
+All preferences persist across app restarts.
+
+| Preference | Default | Where |
+|---|---|---|
+| Lux activation threshold | 15 lux | Settings → Display |
+| Lux deactivation threshold | 28 lux | Settings → Display |
+| Fill-light brightness | 100 % | Settings → Display |
+| Screen wake-lock | On | Settings → Display |
+| Camera zoom level | 1.0× | Settings → Display |
+| Haptic feedback | On | Settings → Technical |
+| Auto-restart on result | Off | Settings → Technical |
+| Match / liveness thresholds | 0.65 / 0.6 | Settings → Technical |
+
+### 9. Settings Subviews
+
+- **Display** - fill-light, lux thresholds, screen wake-lock, zoom
+- **Technical** - model thresholds, haptic, auto-restart
+- **Help** - in-app gesture explainers (blink/smile/turn), tips for best results, data privacy info
+
+### 10. In-App Help Guide
+
+- Gesture explainers with visual cues for each liveness prompt
+- Tips for positioning, lighting, and re-enrolment
+- Data privacy summary (no images stored, on-device processing, what syncs to S3)
+- No external docs required - self-contained
+
+### 11. Navigation (5 Tabs)
+
+| Tab | Purpose |
+|---|---|
+| **Scan** | Authenticate a person - runs full pipeline, logs attendance |
+| **Enrol** | Register a new person - 3-angle capture, encrypted storage |
+| **People** | Browse enrolled persons, view count, delete enrolments |
+| **Sync** | Manual sync trigger, unsynced count, sync status |
+| **System** | Settings subviews (Display/Technical/Help), device info, about screen, factory reset |
+
+### 12. App Quality
+
+| Item | Status |
+|---|---|
+| TypeScript strict | ✅ clean `tsc --noEmit` |
+| Unit tests | ✅ 15/15 (Jest) |
+| Release APK | ✅ arm64-v8a, ~62 MB, runs airplane-mode |
+| Open-source only | ✅ MIT / Apache stack, no paid licences |
+| Datalake 3.0 drop-in | ✅ register package + import screens + call `initModels()` |
+
+### 13. Platform Support
+
+| Platform | Status |
+|---|---|
+| Android 8.0+ (arm64-v8a) | ✅ Full native engine, release APK verified on hardware |
+| iOS 12+ | Swift engine written (`ios/FaceEngine/FaceEngine.swift`), identical models + ArcFace math; Xcode wiring pending (needs Mac) |
+| React Native 0.75 | Shared JS/TS layer across both platforms |
+| ONNX Runtime | CPU / XNNPACK / NNAPI (Android) · CPU / CoreML (iOS) |
