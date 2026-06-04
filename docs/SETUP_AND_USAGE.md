@@ -179,8 +179,10 @@ $avd = "$env:ANDROID_HOME\cmdline-tools\latest\bin\avdmanager.bat"
 
 The native engine is implemented in Swift under `ios/FaceEngine/` (`FaceEngine.swift`,
 `RGBAImage.swift`, `FaceEngine.m`), a 1:1 port of the Kotlin engine with the same models,
-channel order, and ArcFace alignment. One-time Xcode wiring (Podfile pod, bundle resources,
-bridging header) is documented in `ios/FaceEngine/README.md`.
+channel order, and ArcFace alignment, plus the `ScreenBrightness` module (`ScreenBrightness.swift`
+/ `.m`). The Xcode wiring (Podfile pod, compile sources, bundle resources, bridging header,
+camera permission) is **already applied** to `OfflineID.xcodeproj`; only `pod install` and the
+Mac build below remain. Details in `ios/FaceEngine/README.md`.
 
 ```bash
 cd ios && pod install && cd ..

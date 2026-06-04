@@ -14,6 +14,15 @@
 		13B07FC11A68108700A75B9A /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 13B07FB71A68108700A75B9A /* main.m */; };
 		7699B88040F8A987B510C191 /* libPods-OfflineID-OfflineIDTests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 19F6CBCC0A4E27FBF8BF4A61 /* libPods-OfflineID-OfflineIDTests.a */; };
 		81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
+		FE0000000000000000000301 /* FaceEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE0000000000000000000101 /* FaceEngine.swift */; };
+		FE0000000000000000000302 /* RGBAImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE0000000000000000000102 /* RGBAImage.swift */; };
+		FE0000000000000000000303 /* FaceEngine.m in Sources */ = {isa = PBXBuildFile; fileRef = FE0000000000000000000103 /* FaceEngine.m */; };
+		FE0000000000000000000305 /* ScreenBrightness.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE0000000000000000000105 /* ScreenBrightness.swift */; };
+		FE0000000000000000000306 /* ScreenBrightness.m in Sources */ = {isa = PBXBuildFile; fileRef = FE0000000000000000000106 /* ScreenBrightness.m */; };
+		FE0000000000000000000401 /* scrfd_500m_fixed.onnx in Resources */ = {isa = PBXBuildFile; fileRef = FE0000000000000000000201 /* scrfd_500m_fixed.onnx */; };
+		FE0000000000000000000402 /* mobilefacenet_int8.onnx in Resources */ = {isa = PBXBuildFile; fileRef = FE0000000000000000000202 /* mobilefacenet_int8.onnx */; };
+		FE0000000000000000000403 /* fasnet_2_7.onnx in Resources */ = {isa = PBXBuildFile; fileRef = FE0000000000000000000203 /* fasnet_2_7.onnx */; };
+		FE0000000000000000000404 /* fasnet_4_0.onnx in Resources */ = {isa = PBXBuildFile; fileRef = FE0000000000000000000204 /* fasnet_4_0.onnx */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -45,6 +54,16 @@
 		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = OfflineID/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		89C6BE57DB24E9ADA2F236DE /* Pods-OfflineID-OfflineIDTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-OfflineID-OfflineIDTests.release.xcconfig"; path = "Target Support Files/Pods-OfflineID-OfflineIDTests/Pods-OfflineID-OfflineIDTests.release.xcconfig"; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
+		FE0000000000000000000101 /* FaceEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FaceEngine.swift; sourceTree = "<group>"; };
+		FE0000000000000000000102 /* RGBAImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RGBAImage.swift; sourceTree = "<group>"; };
+		FE0000000000000000000103 /* FaceEngine.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FaceEngine.m; sourceTree = "<group>"; };
+		FE0000000000000000000104 /* OfflineID-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "OfflineID-Bridging-Header.h"; sourceTree = "<group>"; };
+		FE0000000000000000000105 /* ScreenBrightness.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenBrightness.swift; sourceTree = "<group>"; };
+		FE0000000000000000000106 /* ScreenBrightness.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ScreenBrightness.m; sourceTree = "<group>"; };
+		FE0000000000000000000201 /* scrfd_500m_fixed.onnx */ = {isa = PBXFileReference; lastKnownFileType = file; name = scrfd_500m_fixed.onnx; path = "../android/app/src/main/assets/scrfd_500m_fixed.onnx"; sourceTree = SOURCE_ROOT; };
+		FE0000000000000000000202 /* mobilefacenet_int8.onnx */ = {isa = PBXFileReference; lastKnownFileType = file; name = mobilefacenet_int8.onnx; path = "../android/app/src/main/assets/mobilefacenet_int8.onnx"; sourceTree = SOURCE_ROOT; };
+		FE0000000000000000000203 /* fasnet_2_7.onnx */ = {isa = PBXFileReference; lastKnownFileType = file; name = fasnet_2_7.onnx; path = "../android/app/src/main/assets/fasnet_2_7.onnx"; sourceTree = SOURCE_ROOT; };
+		FE0000000000000000000204 /* fasnet_4_0.onnx */ = {isa = PBXFileReference; lastKnownFileType = file; name = fasnet_4_0.onnx; path = "../android/app/src/main/assets/fasnet_4_0.onnx"; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -119,6 +138,8 @@
 			isa = PBXGroup;
 			children = (
 				13B07FAE1A68108700A75B9A /* OfflineID */,
+				FE0000000000000000000501 /* FaceEngine */,
+				FE0000000000000000000502 /* Models */,
 				832341AE1AAA6A7D00B99B32 /* Libraries */,
 				00E356EF1AD99517003FC87E /* OfflineIDTests */,
 				83CBBA001A601CBA00E9B192 /* Products */,
@@ -148,6 +169,30 @@
 				89C6BE57DB24E9ADA2F236DE /* Pods-OfflineID-OfflineIDTests.release.xcconfig */,
 			);
 			path = Pods;
+			sourceTree = "<group>";
+		};
+		FE0000000000000000000501 /* FaceEngine */ = {
+			isa = PBXGroup;
+			children = (
+				FE0000000000000000000101 /* FaceEngine.swift */,
+				FE0000000000000000000102 /* RGBAImage.swift */,
+				FE0000000000000000000103 /* FaceEngine.m */,
+				FE0000000000000000000105 /* ScreenBrightness.swift */,
+				FE0000000000000000000106 /* ScreenBrightness.m */,
+				FE0000000000000000000104 /* OfflineID-Bridging-Header.h */,
+			);
+			path = FaceEngine;
+			sourceTree = "<group>";
+		};
+		FE0000000000000000000502 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				FE0000000000000000000201 /* scrfd_500m_fixed.onnx */,
+				FE0000000000000000000202 /* mobilefacenet_int8.onnx */,
+				FE0000000000000000000203 /* fasnet_2_7.onnx */,
+				FE0000000000000000000204 /* fasnet_4_0.onnx */,
+			);
+			name = Models;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -245,6 +290,10 @@
 			files = (
 				81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
+				FE0000000000000000000401 /* scrfd_500m_fixed.onnx in Resources */,
+				FE0000000000000000000402 /* mobilefacenet_int8.onnx in Resources */,
+				FE0000000000000000000403 /* fasnet_2_7.onnx in Resources */,
+				FE0000000000000000000404 /* fasnet_4_0.onnx in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -396,6 +445,11 @@
 			files = (
 				13B07FBC1A68108700A75B9A /* AppDelegate.mm in Sources */,
 				13B07FC11A68108700A75B9A /* main.m in Sources */,
+				FE0000000000000000000301 /* FaceEngine.swift in Sources */,
+				FE0000000000000000000302 /* RGBAImage.swift in Sources */,
+				FE0000000000000000000303 /* FaceEngine.m in Sources */,
+				FE0000000000000000000305 /* ScreenBrightness.swift in Sources */,
+				FE0000000000000000000306 /* ScreenBrightness.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -474,7 +528,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.3.0;
+				MARKETING_VERSION = 1.4.0;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-ObjC",
@@ -482,6 +536,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "org.reactjs.native.example.$(PRODUCT_NAME:rfc1034identifier)";
 				PRODUCT_NAME = OfflineID;
+				SWIFT_OBJC_BRIDGING_HEADER = "FaceEngine/OfflineID-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
 				VERSIONING_SYSTEM = "apple-generic";
@@ -500,7 +555,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.3.0;
+				MARKETING_VERSION = 1.4.0;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-ObjC",
@@ -508,6 +563,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "org.reactjs.native.example.$(PRODUCT_NAME:rfc1034identifier)";
 				PRODUCT_NAME = OfflineID;
+				SWIFT_OBJC_BRIDGING_HEADER = "FaceEngine/OfflineID-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				VERSIONING_SYSTEM = "apple-generic";
 			};

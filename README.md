@@ -174,8 +174,10 @@ npm run android           # debug build on a connected device (another terminal)
 ### iOS (needs macOS + Xcode)
 
 The native Swift engine lives in [ios/FaceEngine/](ios/FaceEngine/) (a 1:1 port of the Kotlin
-engine, same models, same math). One-time Xcode wiring (Podfile pod, bundle resources,
-bridging header) is documented in [ios/FaceEngine/README.md](ios/FaceEngine/README.md).
+engine, same models, same math) plus the `ScreenBrightness` module. The Xcode wiring (Podfile
+pod, compile sources, bundle resources, bridging header, camera permission) is **already
+applied** to `OfflineID.xcodeproj`; only `pod install` + a Mac build remain. Details in
+[ios/FaceEngine/README.md](ios/FaceEngine/README.md).
 
 ```bash
 cd ios && pod install && cd ..
@@ -214,7 +216,7 @@ npx react-native run-ios --configuration Release
 
 | Constraint | Status |
 |---|---|
-| React Native, Android + iOS | RN ✅ · Android engine ✅ (offline APK) · iOS engine written in Swift, build wiring pending |
+| React Native, Android + iOS | RN ✅ · Android engine ✅ (offline APK) · iOS engine ✅ Swift + Xcode wiring applied (Mac `pod install` + build remains) |
 | Model footprint ~20 MB | ✅ 9.1 MB |
 | < 1 s recognise + liveness | ✅ ~51 ms host CPU |
 | Android 8+ / iOS 12+, 3 GB RAM, no GPU | ✅ CPU-only ONNX Runtime |

@@ -17,6 +17,9 @@ end
 target 'OfflineID' do
   config = use_native_modules!
 
+  # Native FaceEngine inference runtime (CPU). See ios/FaceEngine/README.md.
+  pod 'onnxruntime-objc', '~> 1.18.0'
+
   use_react_native!(
     :path => config[:reactNativePath],
     # An absolute path to your application root.
